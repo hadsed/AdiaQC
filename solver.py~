@@ -1,0 +1,46 @@
+'''
+
+File: solver.py
+Author: Hadayat Seddiqi
+Date: 3.7.13
+Description: Simulate quantum annealing with some technique.
+
+'''
+
+import scipy as sp
+from scipy import linalg
+
+# Get ground state of initial Hamiltonian (X), set that as initial state
+eigval, eigvec = sp.linalg.eig(delta)
+sortperm = eigval.argsort()
+eigval = eigval[sortperm]
+eigvec = eigvec[:,sortperm]
+
+# It's ugly, but we have to cast in order to convert
+# 1D row vector into 1D column vector
+Psi = sp.transpose(sp.matrix(sp.transpose(eigvec))[0])
+print ("Initial state:")
+print (Psi)
+
+def ExpEvolve(alpha, beta, delta, Psi, T, dt, outflag):
+    " Evolve in time using sequential matrix exponential. "
+    i = 0
+    t = 0
+    N = T/dt
+
+    # Loop over time
+    while (i <= N) :
+        if (i != 1) : t0 = t - dt
+        else : t0 = 0.0
+
+        H = -1j*(((t**2 - t0**2)/(2*T))*(alpha + beta) + (t - t0 + (t0**2 - t**2)/(2*T))*delta)
+
+        A = linalg.expm(H)
+        Psi = A*Psi
+
+        # Call an output function to handle outflag
+
+        i += 1
+        t += dt
+
+    return Psi

@@ -1,0 +1,31 @@
+'''
+
+File: hopfield.py
+Author: Hadayat Seddiqi
+Date: 3.15.13
+Description: Parameters for a Hopfield neural network.
+
+'''
+
+import problems.problems as problems
+
+# Total time
+T = 100
+
+# Timestep
+dt = 0.1
+
+# Plot eigenspectrum (or not)
+eigspecflag = 0
+
+# Number of neurons
+neurons = 4
+
+# Memories
+memories = [ [1,0,0,1] ]
+
+# Input state
+inputstate = [1,0,1,1]
+
+# Generate the QUBO
+nQubits, Q, a = problems.HopfieldNetwork(neurons, memories, inputstate)

@@ -1,0 +1,186 @@
+'''
+
+File: expsolver.py
+Author: Hadayat Seddiqi
+Date: 3.7.13
+Description: Simulate quantum annealing.
+
+'''
+
+import optparse
+import scipy as sp
+import itertools
+from scipy import linalg
+
+import qubotoising as qi
+
+# Command line options
+if __name__=="__main__":
+    parser = optparse.OptionParser("usage: %prog [options] arg1 arg2")
+    parser.add_option("-t", "--time", dest="T", default="10",
+                      type="float", help="total run time")
+    parser.add_option("-x", "--dt", dest="dt", default="0.1",
+                      type="float",help="timestep")
+    parser.add_option("-q", "--nqubits", dest="nQubits", default="2",
+                      type="int",help="number of qubits (will be overwritten if -c is defined)")
+    parser.add_option("-c", "--coeff", dest="coeff", default="",
+                      type="string",help="data file for ising coefficient matrices")
+    (options, args) = parser.parse_args()
+    T = options.T
+    dt = options.dt
+    nQubits = options.nQubits
+    coeffname = options.coeff
+
+t = 0.0
+i = 0
+N = T/dt
+Z = sp.matrix([[1,0],[0,-1]])
+X = sp.matrix([[0,1],[1,0]])
+I = sp.identity(2)
+alpha = sp.zeros((2**nQubits,2**nQubits))
+beta = sp.zeros((2**nQubits,2**nQubits))
+delta = sp.zeros((2**nQubits,2**nQubits))
+matrices = []
+
+nQubits, Q, a = qi.HopfieldQUBO(4, [[1,0,0,1]], [1,0,1,1])
+qi.QUBO2Ising(nQubits, Q, a)
+
+coeffname = "isingcoeffs.npz"
+
+if (coeffname == "") :
+    # Calculate alpha
+    for i in range(0,nQubits) :
+        for m in range(0,nQubits-1) : matrices.append(I)
+        matrices.insert(i, Z)
+        temp = matrices[0]
+        matrices.pop(0)
+        
+        while (len(matrices) != 0) :
+            temp = sp.kron(temp, matrices[0])
+            matrices.pop(0)
+
+        alpha += temp
+
+    temp = 0
+
+    # Calculate beta
+    for i in range(0,nQubits) :
+        for j in range(0,nQubits) :
+            if (i != j) :
+                for m in range(0,nQubits-2) : matrices.append(I)
+                matrices.insert(i, Z)
+                matrices.insert(j, Z)
+                temp = matrices[0]
+                matrices.pop(0)
+
+                while (len(matrices) != 0) :
+                    temp = sp.kron(temp, matrices[0])
+                    matrices.pop(0)
+                    
+                beta += temp
+    temp = 0
+
+else :
+    # Read alpha, beta, and infer nQubits from file
+    coeffs = sp.load(coeffname)
+    nQubits = int(sp.sqrt(len(coeffs['alpha'][0])))
+    alpha = coeffs['alpha']
+    beta = coeffs['beta']
+
+# Calculate delta
+for i in range(0,nQubits) :
+    for m in range(0,nQubits-1) : matrices.append(I)
+    matrices.insert(i, X)
+    temp = matrices[0]
+    matrices.pop(0)
+
+    while (len(matrices) != 0) :
+        temp = sp.kron(temp, matrices[0])
+        matrices.pop(0)
+
+    delta += temp
+
+# Get ground state of initial Hamiltonian (X), set that as initial state
+eigval, eigvec = sp.linalg.eig(delta)
+sortperm = eigval.argsort()
+eigval = eigval[sortperm]
+eigvec = eigvec[:,sortperm]
+
+# It's ugly, but we have to cast in order to convert
+# 1D row vector into 1D column vector
+Psi = sp.transpose(sp.matrix(sp.transpose(eigvec))[0])
+print ("Initial state:")
+print (Psi)
+
+# Evolve in time
+while (i <= N) :
+    if (i != 1) : t0 = t - dt
+    else : t0 = 0.0
+
+    H = -1j*(((t**2 - t0**2)/(2*T))*(alpha + beta) + (t - t0 + (t0**2 - t**2)/(2*T))*delta)
+
+    A = linalg.expm(H)
+    Psi = A*Psi
+
+    i = i + 1
+    t = t + dt
+
+###################################################
+# Construct states labeling
+#
+# The NumPy kron() does a kronecker product like:
+# kron(A,B) = [ [a00*B, a01*B], [a10*B, a11*B] ]
+# So we construct our states similarly, with the 
+# same kron() routine.
+###################################################
+
+def kbits(n, k) :
+    ''' kbits(n: length of bitstring, k: number of ones) '''
+    result = []
+    for bits in itertools.combinations(range(n), k) :
+        s = ['0'] * n
+        for bit in bits :
+            s[bit] = '1'
+        result.append(''.join(s))
+    return result
+
+# Generate bitstrings
+bitstring = []
+for i in range(0,nQubits+1) : bitstring.append(kbits(nQubits, i))
+bitstring = list(itertools.chain.from_iterable(bitstring)) # Flatten
+
+# Generate unit vectors
+statelist = []
+poslist = []
+pos = 0
+unit0 = sp.array([1,0])
+unit1 = sp.array([0,1])
+
+for i in range(len(bitstring)) :
+    # Construct unit vector corresponding to bitstring
+    state = unit1 if (bitstring[i][0] == '1') else unit0
+    for j in range(nQubits-1) :
+        state = sp.kron( state, (unit1 if (bitstring[i][j+1] == '1') else unit0) )
+    statelist.append(state)
+
+    # Record orientation of unit vector (using position of 1 value)
+    for j in range(2**nQubits) :
+        if (statelist[-1][j]) :
+            pos = j
+            break
+    poslist.append(pos)
+
+# Sort the states
+sortperm = sp.array(poslist).argsort()
+bitstring = [ bitstring[i] for i in sortperm ]
+
+print ("Probability:")
+density = sp.zeros(2**nQubits)
+for i in range(2**nQubits) : density[i] = (sp.vdot(Psi[i],Psi[i])**2).real
+
+# Sort by probability amplitudes
+sortperm = density.argsort()[::-1] # Flip order of argsort (descending)
+bitstring = [ bitstring[i] for i in sortperm ]
+density = [ density[i] for i in sortperm ]
+
+for i in range(2**nQubits) : print (bitstring[i], '\t', '%.8E' % density[i])

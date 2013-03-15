@@ -1,0 +1,103 @@
+'''
+
+File: expsolver.py
+Author: Hadayat Seddiqi
+Date: 3.7.13
+Description: Simulate quantum annealing.
+
+'''
+
+import optparse
+import scipy as sp
+import itertools
+from scipy import linalg
+
+import qubotoising as qi
+import statelabels
+
+# Command line options
+if __name__=="__main__":
+    parser = optparse.OptionParser("usage: %prog [options] arg1 arg2")
+    parser.add_option("-t", "--time", dest="T", default="10",
+                      type="float", help="total run time")
+    parser.add_option("-x", "--dt", dest="dt", default="0.1",
+                      type="float",help="timestep")
+    parser.add_option("-q", "--nqubits", dest="nQubits", default="2",
+                      type="int",help="number of qubits (will be overwritten if -c is defined)")
+    parser.add_option("-c", "--coeff", dest="coeff", default="",
+                      type="string",help="data file for ising coefficient matrices")
+    (options, args) = parser.parse_args()
+    T = options.T
+    dt = options.dt
+    nQubits = options.nQubits
+    coeffname = options.coeff
+
+# Total time
+t = 0.0
+i = 0
+# Time iterations
+N = T/dt
+# Pauli matrices
+Z = sp.matrix([[1,0],[0,-1]])
+X = sp.matrix([[0,1],[1,0]])
+I = sp.identity(2)
+# Read alpha, beta, and infer nQubits from file
+coeffs = sp.load("isingcoeffs.npz")
+nQubits = int(sp.sqrt(len(coeffs['alpha'][0])))
+# Construct alpha, beta, delta
+alpha = sp.zeros((2**nQubits,2**nQubits))
+beta = sp.zeros((2**nQubits,2**nQubits))
+delta = sp.zeros((2**nQubits,2**nQubits))
+alpha = coeffs['alpha']
+beta = coeffs['beta']
+matrices = []
+
+nQubits, Q, a = qi.HopfieldQUBO(4, [[1,0,0,1]], [1,0,1,1])
+qi.QUBO2Ising(nQubits, Q, a)
+
+# Calculate delta
+for i in range(0,nQubits) :
+    for m in range(0,nQubits-1) : matrices.append(I)
+    matrices.insert(i, X)
+    temp = matrices[0]
+    matrices.pop(0)
+
+    while (len(matrices) != 0) :
+        temp = sp.kron(temp, matrices[0])
+        matrices.pop(0)
+
+    delta += temp
+
+# Get ground state of initial Hamiltonian (X), set that as initial state
+eigval, eigvec = sp.linalg.eig(delta)
+sortperm = eigval.argsort()
+eigval = eigval[sortperm]
+eigvec = eigvec[:,sortperm]
+
+# It's ugly, but we have to cast in order to convert
+# 1D row vector into 1D column vector
+Psi = sp.transpose(sp.matrix(sp.transpose(eigvec))[0])
+print ("Initial state:")
+print (Psi)
+
+# Evolve in time
+while (i <= N) :
+    if (i != 1) : t0 = t - dt
+    else : t0 = 0.0
+
+    H = -1j*(((t**2 - t0**2)/(2*T))*(alpha + beta) + (t - t0 + (t0**2 - t**2)/(2*T))*delta)
+
+    A = linalg.expm(H)
+    Psi = A*Psi
+
+    i = i + 1
+    t = t + dt
+
+# Get state labelings
+bitstring = statelabels.GenerateLabels(nQubits)
+
+# Sort them in descending order
+bitstring, density = statelabels.SortStateProbabilities(nQubits, Psi, bitstring)
+
+print ("Probability:")
+for i in range(2**nQubits) : print (bitstring[i], '\t', '%.8E' % density[i])
