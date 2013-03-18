@@ -3,7 +3,7 @@
 File: init.py
 Author: Hadayat Seddiqi
 Date: 3.15.13
-Description: Initialize stuff (state, Hamiltonian, etc.)
+Description: Initialize stuff (state, Hamiltonian (Ising coefficients), etc.)
 
 '''
 
@@ -89,6 +89,3 @@ def QUBO2Ising(n, Q, a):
         delta += temp
 
     return [alpha, beta, delta]
-
-    # Save matrices to output
-    sp.savez('isingcoeffs.npz', alpha=alpha, beta=beta, delta=delta)

@@ -36,16 +36,12 @@ except:
 pathpref =  os.path.dirname(os.path.realpath(__file__)) + "/"
 os.makedirs(pathpref + params.outputdir, exist_ok=True)
 
-# Time
-t = 0.0
-i = 0
-
 # Get parameters from problem file
-nQubits = params.nQubits
 Q = params.Q
 a = params.a
 T = params.T
 dt = params.dt
+nQubits = params.nQubits
 eigspecflag = params.eigspecflag
 
 # Get Ising coefficients
