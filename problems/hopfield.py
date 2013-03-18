@@ -6,8 +6,10 @@ Date: 3.15.13
 Description: Parameters for a Hopfield neural network.
 
 '''
-
-import problems.problems as problems
+# Ugly import hack to support Python2 and 3
+import sys
+if sys.version_info[0] > 2: import problems.problems as problems
+else: import problems
 
 #
 # Output parameters

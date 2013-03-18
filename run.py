@@ -12,7 +12,7 @@ import optparse
 import scipy as sp
 from scipy import linalg
 
-import init
+import initialize
 import solver
 import statelabels
 
@@ -28,13 +28,19 @@ if __name__=="__main__":
 if problem.endswith('.py'): problem = problem[:-3]
 
 try:
-    params = __import__("problems." + problem, globals=globals(), fromlist=[problem])
-except:
-    print ("Unable to import config file problems.%s" % (problem,))
+    params = __import__("problems." + problem, fromlist=[problem])
+except ImportError:
+    print ("Unable to import config file for '%s'." % problem)
+    raise SystemExit
 
 # Create data directory
 pathpref =  os.path.dirname(os.path.realpath(__file__)) + "/"
-os.makedirs(pathpref + params.outputdir, exist_ok=True)
+#os.makedirs(pathpref + params.outputdir, exist_ok=True) # The Python 3 way
+try:
+    os.makedirs(pathpref + params.outputdir)
+except OSError:
+    if not os.path.isdir(pathpref + params.outputdir):
+        raise
 
 # Get parameters from problem file
 Q = params.Q
@@ -45,10 +51,10 @@ nQubits = params.nQubits
 eigspecflag = params.eigspecflag
 
 # Get Ising coefficients
-alpha, beta, delta = init.QUBO2Ising(nQubits, Q, a)
+alpha, beta, delta = initialize.QUBO2Ising(nQubits, Q, a)
 
 # Initial state
-Psi = init.InitialState(delta)
+Psi = initialize.InitialState(delta)
 
 print ("Initial state:")
 print (Psi)
@@ -61,4 +67,6 @@ bitstring = statelabels.GenerateLabels(nQubits)
 bitstring, density = statelabels.SortStateProbabilities(nQubits, Psi, bitstring)
 
 print ("Probability:")
-for i in range(2**nQubits) : print (bitstring[i], '\t', '%.8E' % density[i])
+for i in range(2**nQubits):
+    outstr = bitstring[i] + '\t' + '%.8E' % density[i]
+    print (outstr)
