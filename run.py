@@ -70,3 +70,8 @@ print ("Probability:")
 for i in range(2**nQubits):
     outstr = bitstring[i] + '\t' + '%.8E' % density[i]
     print (outstr)
+
+# Test output
+if (problem == 'test'):
+    assert 1 == 1, "You broke math."
+
