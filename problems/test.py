@@ -9,14 +9,19 @@ Description: The test problem.
 
 import scipy as sp
 
-eigspecflag = 0
+# Output parameters
+eigspecdat = 1 # Data for eigenspectrum (or not)
+eigspecplot = 1 # Output a plot
+eigspecnum = 2
+
 outputdir = 'data/'
 
 T = 10.0
 dt = 0.1
 
-nQubits = 2
-Q = sp.ones((nQubits,nQubits)) - sp.identity(nQubits)
+nQubits = 1
+#Q = sp.ones((nQubits,nQubits)) - sp.identity(nQubits)
+Q = sp.zeros((nQubits,nQubits))
 a = sp.ones(nQubits)
 
 print (Q, a)

@@ -11,39 +11,40 @@ import os
 import scipy as sp
 from scipy import linalg
 
-def GetEigSpec(t, A):
-    E = sp.linalg.eigvals(A)
-    return [t, E[0], E[1]]
+def GetEigSpec(t, A, n):
+    datapoint = [t]
 
-def RecordEigSpec(eigspec):
-    eigpath = os.path.dirname(os.path.realpath(__file__)) + "/data/eigenspectrum.dat"
+    E = sp.linalg.eigvalsh(A)
+    for i in range(0, n): datapoint.append(E[i].real)
+
+    return datapoint # [t, eigval 1, eigval 2, ... , eigval n]
+
+def RecordEigSpec(eigspec, outputdir):
+    eigpath = os.path.dirname(os.path.realpath(__file__)) + "/" + outputdir + "/eigenspectrum.dat"
     sp.savetxt(eigpath, eigspec)
 
-def ExpEvolve(alpha, beta, delta, Psi, T, dt, eigspecflag):
+def ExpEvolve(alpha, beta, delta, Psi, T, dt, eigspecparams, outputdir):
     " Evolve in time using sequential matrix exponential. "
-    i = 0
-    t = 0
-    N = T/dt
 
-    if (eigspecflag): eigspec = []
+    if (eigspecparams[0]): eigspec = []
+
+    N = T/dt # steps
 
     # Loop over time
-    while (i <= N) :
-        if (i != 1) : t0 = t - dt
-        else : t0 = 0.0
+    for i in range(1, int(sp.floor(N)) + 1):
+        t = i*dt
+        t0 = (i-1)*dt
 
-        # Approximated Hamiltonian
-        H = -1j*(((t**2 - t0**2)/(2*T))*(alpha + beta) + (t - t0 + (t0**2 - t**2)/(2*T))*delta)
+        # Approximate Hamiltonian to first term in Magnus expansion (OPTIMIZE)
+        H = 1/(2*T)*((t**2 - t0**2)*(alpha + beta) + (2*T*(t - t0) + t0**2 - t**2)*delta)
 
-        A = linalg.expm(H)
+        A = linalg.expm(-1j*H)
         Psi = A*Psi
 
         # Record eigenvalues
-        if (eigspecflag): eigspec.append(GetEigSpec(t, H))
+        if (eigspecparams[0]): eigspec.append(GetEigSpec(t, H, eigspecparams[2]))
 
-        i += 1
-        t += dt
 
-    if (eigspecflag): RecordEigSpec(eigspec)
+    if (eigspecparams[0]): RecordEigSpec(eigspec, outputdir)
 
     return Psi

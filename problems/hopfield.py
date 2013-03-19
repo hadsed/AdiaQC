@@ -9,7 +9,9 @@ Description: Parameters for a Hopfield neural network.
 import scipy as sp
 
 # Output parameters
-eigspecflag = 1 # Plot eigenspectrum (or not)
+eigspecdat = 1 # Data for eigenspectrum (or not)
+eigspecplot = 1 # Output a plot
+eigspecnum = 8
 outputdir = 'data/'
 
 # Simulation parameters

@@ -1,6 +1,5 @@
 *.py[cod]
 *~
-__init__.py
 
 # C extensions
 *.so

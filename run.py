@@ -48,7 +48,13 @@ a = params.a
 T = params.T
 dt = params.dt
 nQubits = params.nQubits
-eigspecflag = params.eigspecflag
+eigspecdat = params.eigspecdat
+eigspecplot = params.eigspecplot
+eigspecnum = params.eigspecnum
+outputdir = params.outputdir
+
+# Eigenspectrum flags
+eigspecparams = [eigspecdat, eigspecplot, eigspecnum]
 
 # Get Ising coefficients
 alpha, beta, delta = initialize.QUBO2Ising(nQubits, Q, a)
@@ -60,7 +66,7 @@ print ("Initial state:")
 print (Psi)
 
 # Evolve in time
-Psi = solver.ExpEvolve(alpha, beta, delta, Psi, T, dt, eigspecflag)
+Psi = solver.ExpEvolve(alpha, beta, delta, Psi, T, dt, eigspecparams, outputdir)
 
 # Get state labelings, sort them in descending order
 bitstring = statelabels.GenerateLabels(nQubits)
