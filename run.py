@@ -43,18 +43,23 @@ except OSError:
         raise
 
 # Get parameters from problem file
+nQubits = params.nQubits
 Q = params.Q
 a = params.a
 T = params.T
 dt = params.dt
-nQubits = params.nQubits
+
+errchk = params.errchk
+eps = params.eps
+
 eigspecdat = params.eigspecdat
 eigspecplot = params.eigspecplot
 eigspecnum = params.eigspecnum
+
 outputdir = params.outputdir
 
 # Eigenspectrum flags
-eigspecparams = [eigspecdat, eigspecplot, eigspecnum]
+eigspecparams = { 'dat': eigspecdat, 'plot': eigspecplot, 'num': eigspecnum }
 
 # Get Ising coefficients
 alpha, beta, delta = initialize.QUBO2Ising(nQubits, Q, a)
@@ -66,7 +71,7 @@ print ("Initial state:")
 print (Psi)
 
 # Evolve in time
-Psi = solver.ExpEvolve(alpha, beta, delta, Psi, T, dt, eigspecparams, outputdir)
+Psi = solver.ExpEvolve(nQubits, alpha, beta, delta, Psi, T, dt, eigspecparams, outputdir, errchk, eps)
 
 # Get state labelings, sort them in descending order
 bitstring = statelabels.GenerateLabels(nQubits)

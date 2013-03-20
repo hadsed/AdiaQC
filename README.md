@@ -1,7 +1,7 @@
 AdiaQC
 ======
 
-Adiabatic quantum computation solver used to simulate various problems (some machine learning problems included). This is written in Python 3.2 and tested on Linux only, but may work for you (do let me know if it does). I try to keep it compatible with Python 2.6+, but not actively. Requires SciPy/NumPy.
+Adiabatic quantum computation solver used to simulate various problems (some machine learning problems included). This is written in Python 3.2 and tested on Linux only, but may work for you (do let me know if it does). I try to keep it compatible with Python 2.6+, but not actively. Requires SciPy (NumPy, PyLab).
 
 Running a problem looks like:
 
