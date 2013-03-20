@@ -37,7 +37,7 @@ def ExpEvolve(nQubits, alpha, beta, delta, Psi, T, dt, eigspecparams, outputdir,
     N = T/dt # steps
 
     # Loop over time
-    for i in range(1, int(sp.floor(N)) + 1):
+    for i in range(0, int(sp.floor(N)) + 1):
         t = i*dt
         t0 = (i-1)*dt
 
@@ -59,7 +59,6 @@ def ExpEvolve(nQubits, alpha, beta, delta, Psi, T, dt, eigspecparams, outputdir,
                 braket = sp.vdot(Psi, Hvecs[i])
                 norm += sp.vdot(braket, braket).real
 
-            # Check for numerical error
             if ( (1.0 - norm) > eps ): 
                 print ("Error is greater than eps = " + str(eps) + ": " + str((1.0 - norm)))
 
