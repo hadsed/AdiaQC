@@ -1,6 +1,6 @@
 '''
 
-File: init.py
+File: initialize.py
 Author: Hadayat Seddiqi
 Date: 3.15.13
 Description: Initialize stuff (state, Hamiltonian (Ising coefficients), etc.)
