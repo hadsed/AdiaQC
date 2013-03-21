@@ -33,6 +33,7 @@ def QUBO2Ising(n, Q, a):
     h = 0.5*s + J.sum(axis=1)
     g = J.sum() + 0.5*s.sum()
 
+def IsingHamiltonian(nQubits, h, J):
     ### Construct Hamiltonian ###
     Z = sp.matrix([[1,0],[0,-1]])
     X = sp.matrix([[0,1],[1,0]])
@@ -89,3 +90,129 @@ def QUBO2Ising(n, Q, a):
         delta += temp
 
     return [alpha, beta, delta]
+
+def HamiltonianGen(n):
+    " Generate default Hamiltonian coefficients. "
+
+    ### Construct Hamiltonian ###
+    Z = sp.matrix([[1,0],[0,-1]])
+    X = sp.matrix([[0,1],[1,0]])
+    I = sp.identity(2)
+    alpha = sp.zeros((2**n,2**n))
+    beta = sp.zeros((2**n,2**n))
+    delta = sp.zeros((2**n,2**n))
+    matrices = []
+
+    # Calculate alpha
+    for i in range(0,n):
+        for m in range(0,n-1): matrices.append(I)
+        matrices.insert(i, Z)
+        temp = matrices[0]
+        matrices.pop(0)
+
+        while (len(matrices) != 0):
+            temp = sp.kron(temp, matrices[0])
+            matrices.pop(0)
+
+        alpha = alpha + temp
+
+    temp = 0
+
+    # Calculate beta
+    for i in range(0,n):
+        for j in range(0,n):
+            if (i != j):
+                for m in range(0,n-2): matrices.append(I)
+                matrices.insert(i, Z)
+                matrices.insert(j, Z)
+                temp = matrices[0]
+                matrices.pop(0)
+
+                while (len(matrices) != 0):
+                    temp = sp.kron(temp, matrices[0])
+                    matrices.pop(0)
+
+                beta = beta + temp
+
+    temp = 0
+
+    # Calculate delta                                                                          
+    for i in range(0,n) :
+        for m in range(0,n-1) : matrices.append(I)
+        matrices.insert(i, X)
+        temp = matrices[0]
+        matrices.pop(0)
+
+        while (len(matrices) != 0) :
+            temp = sp.kron(temp, matrices[0])
+            matrices.pop(0)
+
+        delta += temp
+
+    return [alpha, beta, delta]
+
+def AlphaCoeffs(n):
+    " Construct the alpha coefficient matrix. "
+    Z = sp.matrix([[1,0],[0,-1]])
+    I = sp.identity(2)
+    alpha = sp.zeros((2**n,2**n))
+    matrices = []
+
+    for i in range(0,n):
+        for m in range(0,n-1): matrices.append(I)
+        matrices.insert(i, Z)
+        temp = matrices[0]
+        matrices.pop(0)
+
+        while (len(matrices) != 0):
+            temp = sp.kron(temp, matrices[0])
+            matrices.pop(0)
+
+        alpha = (alpha + temp)*h[i]
+
+    return alpha
+
+def BetaCoeffs(n):
+    " Calculate beta coefficients. "
+    Z = sp.matrix([[1,0],[0,-1]])
+    I = sp.identity(2)
+    beta = sp.zeros((2**n,2**n))
+    matrices = []
+
+    for i in range(0,n):
+        for j in range(0,n):
+            if (i != j):
+                for m in range(0,n-2): matrices.append(I)
+                matrices.insert(i, Z)
+                matrices.insert(j, Z)
+                temp = matrices[0]
+                matrices.pop(0)
+
+                while (len(matrices) != 0):
+                    temp = sp.kron(temp, matrices[0])
+                    matrices.pop(0)
+
+                beta = beta + temp
+
+    return beta
+
+def DeltaCoeffs(n):
+    " Calculate delta coefficients. "
+    X = sp.matrix([[0,1],[1,0]])
+    I = sp.identity(2)
+    delta = sp.zeros((2**n,2**n))
+    matrices = []
+
+    for i in range(0,n) :
+        for m in range(0,n-1) : matrices.append(I)
+        matrices.insert(i, X)
+        temp = matrices[0]
+        matrices.pop(0)
+
+        while (len(matrices) != 0) :
+            temp = sp.kron(temp, matrices[0])
+            matrices.pop(0)
+
+        delta += temp
+
+    return delta

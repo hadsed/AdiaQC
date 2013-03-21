@@ -49,9 +49,14 @@ Q = params.Q
 a = params.a
 T = params.T
 dt = params.dt
-
+ising = params.ising
 errchk = params.errchk
 eps = params.eps
+
+# Get user-specified coefficients
+alpha = params.alpha
+beta = params.beta
+delta = params.delta
 
 # Construct output parameters dictionary
 outinfo = { 'eigdat': params.eigspecdat, 
@@ -66,8 +71,21 @@ outinfo = { 'eigdat': params.eigspecdat,
 if (params.output == 0):
     for param in outinfo: outinfo[param] = 0
 
-# Get Ising coefficients
-alpha, beta, delta = initialize.QUBO2Ising(nQubits, Q, a)
+# Get our initial Hamiltonian coefficients
+if (ising):
+    # Get Ising coefficients
+    alpha, beta, delta = initialize.IsingHamiltonian(initialize.QUBO2Ising(nQubits, Q, a))
+elif (alpha.size == 0 & beta.size == 0 & delta.size == 0):
+    # Get default generated coefficients
+    alpha, beta, delta = initialize.HamiltonianGen(nQubits)
+else:
+    # Check if we need to generate individually
+    if (alpha.size == 0):
+        alpha = initialize.AlphaCoeffs(nQubits)
+    if (beta.size == 0):
+        beta = initialize.BetaCoeffs(nQubits)
+    if (delta.size == 0):
+        delta = initialize.DeltaCoeffs(nQubits)
 
 # Initial state
 Psi = initialize.InitialState(delta)
@@ -105,8 +123,8 @@ if isinstance(T, collections.Iterable):
         solve.output.PlotFidelity(fidelitydata, outinfo['outdir'])
 
 else:
-    Psi = solver.ExpPert(nQubits, alpha, beta, delta, Psi, T[i], dt, 
-                         errchk, eps, outinfo)
+    Psi = solve.ExpPert(nQubits, alpha, beta, delta, Psi, T, dt, 
+                        errchk, eps, outinfo)
 
 # Get state labelings, sort them in descending order
 bitstring = statelabels.GenerateLabels(nQubits)
