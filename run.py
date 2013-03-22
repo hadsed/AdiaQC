@@ -74,7 +74,8 @@ if (params.output == 0):
 # Get our initial Hamiltonian coefficients
 if (ising):
     # Get Ising coefficients
-    alpha, beta, delta = initialize.IsingHamiltonian(initialize.QUBO2Ising(nQubits, Q, a))
+    h, J = initialize.QUBO2Ising(Q, a)
+    alpha, beta, delta = initialize.IsingHamiltonian(nQubits, h, J)
 elif (alpha.size == 0 & beta.size == 0 & delta.size == 0):
     # Get default generated coefficients
     alpha, beta, delta = initialize.HamiltonianGen(nQubits)

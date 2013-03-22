@@ -60,7 +60,7 @@ def ExpPert(nQubits, alpha, beta, delta, Psi, T, dt, errchk, eps, outinfo):
         if (outinfo['eigdat']):
             eigspec.append(output.ConstructEigData(t, Hvals, outinfo['eignum']))
 
-    if (outinfo['eigdat']): output.RecordEigSpec(eigspec, outinfo['outdir'])
-    if (outinfo['eigplot']): output.PlotEigSpec(eigspec, outinfo['outdir'])
+    if (outinfo['eigdat']): output.RecordEigSpec(eigspec, outinfo['outdir'], T)
+    if (outinfo['eigplot']): output.PlotEigSpec(eigspec, outinfo['outdir'], T)
 
     return Psi

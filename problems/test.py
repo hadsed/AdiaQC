@@ -10,8 +10,8 @@ Description: The test problem.
 import scipy as sp
 
 nQubits = 2
-T = 20.0
-#T = range(1, 110, 9) # Output a sequence of anneal times
+#T = 20.0
+T = range(1, 110, 9) # Output a sequence of anneal times
 dt = 0.1
 
 # Output parameters
@@ -21,14 +21,14 @@ eigspecplot = 1 # Plot eigspec
 eigspecnum = 2**nQubits # Number of eigenvalues
 fidelplot = 1 # Plot fidelity
 fideldat = 1 # Output fidelity data
-fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
+fidelnumstates = 1 #2**nQubits # Check fidelity with this number of eigenstates
 outputdir = 'data/' # In relation to run.py
 
 errchk = 1 # Error-checking on/off
 eps = 0.01 # Numerical error in normalization condition (1 - norm < eps)
 
 # Specify Ising coefficients (Q, a), or alpha, beta directly
-ising = 0
+ising = 1
 Q = sp.zeros((nQubits,nQubits))
 #Q = sp.ones((nQubits,nQubits)) - sp.identity(nQubits)
 a = sp.ones(nQubits)

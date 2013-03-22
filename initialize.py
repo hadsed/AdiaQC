@@ -23,7 +23,7 @@ def InitialState(delta):
     Psi = sp.transpose(sp.matrix(sp.transpose(eigvec))[0])
     return Psi
 
-def QUBO2Ising(n, Q, a):
+def QUBO2Ising(Q, a):
     " Convert QUBO problem to Ising model, construct and output \
       the Ising Hamiltonian. "
 
@@ -33,7 +33,9 @@ def QUBO2Ising(n, Q, a):
     h = 0.5*s + J.sum(axis=1)
     g = J.sum() + 0.5*s.sum()
 
-def IsingHamiltonian(nQubits, h, J):
+    return [h, J]
+
+def IsingHamiltonian(n, h, J):
     ### Construct Hamiltonian ###
     Z = sp.matrix([[1,0],[0,-1]])
     X = sp.matrix([[0,1],[1,0]])

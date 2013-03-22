@@ -18,22 +18,28 @@ def ConstructEigData(t, vals, n):
 
     return datapoint
 
-def RecordEigSpec(eigspec, outdir):
+def RecordEigSpec(eigspec, outdir, T):
     " Output eigenspectrum to data file. "
-    eigpath = os.path.dirname(os.path.realpath(__file__)) + "/" + outdir + "/eigenspectrum.dat"
+    eigpath = os.path.dirname(os.path.realpath(__file__)) + "/" + \
+        outdir + "/eigenspectrum" + str(T) + ".dat"
     sp.savetxt(eigpath, eigspec)
 
-def PlotEigSpec(eigspec, outdir):
+def PlotEigSpec(eigspec, outdir, T):
     " Plot eigenspectrum. "
     import pylab as pl
 
-    eigpath = os.path.dirname(os.path.realpath(__file__)) + "/" + outdir + "/eigenspectrum.png"
+    eigpath = os.path.dirname(os.path.realpath(__file__)) + "/" + \
+        outdir + "/eigenspectrum" + str(T) + ".png"
+
+    # Clear figure
+    pl.clf()
 
     # Get columns of eigspec to plot
     t = [ row[0] for row in eigspec ]
     for i in range(1,len(eigspec[0])): 
         pl.plot(t, [ row[i] for row in eigspec ])
 
+    pl.xlim([0, T])
     pl.xlabel(r'$Time$')
     pl.ylabel(r'$Energy$')
     pl.savefig(eigpath)
