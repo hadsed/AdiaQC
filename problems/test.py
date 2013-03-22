@@ -22,13 +22,15 @@ eigspecnum = 2**nQubits # Number of eigenvalues
 fidelplot = 1 # Plot fidelity
 fideldat = 1 # Output fidelity data
 fidelnumstates = 1 #2**nQubits # Check fidelity with this number of eigenstates
+overlapdat = 1 # Output overlap data
+overlapplot = 1 # Plot overlap
 outputdir = 'data/' # In relation to run.py
 
 errchk = 1 # Error-checking on/off
 eps = 0.01 # Numerical error in normalization condition (1 - norm < eps)
 
 # Specify Ising coefficients (Q, a), or alpha, beta directly
-ising = 1
+ising = 0
 Q = sp.zeros((nQubits,nQubits))
 #Q = sp.ones((nQubits,nQubits)) - sp.identity(nQubits)
 a = sp.ones(nQubits)

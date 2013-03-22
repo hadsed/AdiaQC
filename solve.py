@@ -34,6 +34,7 @@ def ExpPert(nQubits, alpha, beta, delta, Psi, T, dt, errchk, eps, outinfo):
     " Solve using exponential perturbation theory (i.e. Magnus expansion). "
 
     if (outinfo['eigdat']): eigspec = []
+    if (outinfo['overlapdat']): overlap = []
 
     N = T/dt # steps
 
@@ -60,7 +61,13 @@ def ExpPert(nQubits, alpha, beta, delta, Psi, T, dt, errchk, eps, outinfo):
         if (outinfo['eigdat']):
             eigspec.append(output.ConstructEigData(t, Hvals, outinfo['eignum']))
 
+        if (outinfo['overlapdat']):
+            overlap.append(output.ConstructOverlapData(t, Psi, Hvecs[0]))
+
     if (outinfo['eigdat']): output.RecordEigSpec(eigspec, outinfo['outdir'], T)
     if (outinfo['eigplot']): output.PlotEigSpec(eigspec, outinfo['outdir'], T)
+
+    if (outinfo['overlapdat']): output.RecordOverlap(overlap, outinfo['outdir'], T)
+    if (outinfo['overlapplot']): output.PlotOverlap(overlap, outinfo['outdir'], T)
 
     return Psi

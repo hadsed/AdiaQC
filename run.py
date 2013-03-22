@@ -65,6 +65,8 @@ outinfo = { 'eigdat': params.eigspecdat,
             'fiddat': params.fideldat, 
             'fidplot': params.fidelplot, 
             'fidnumstates': params.fidelnumstates,
+            'overlapdat': params.overlapdat,
+            'overlapplot': params.overlapplot,
             'outdir': params.outputdir }
 
 # Turn off all outputs (potentially)

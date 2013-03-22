@@ -44,6 +44,43 @@ def PlotEigSpec(eigspec, outdir, T):
     pl.ylabel(r'$Energy$')
     pl.savefig(eigpath)
 
+def ConstructOverlapData(t, Psi, vec):
+    " Construct proper datapoint for overlap. "
+    datapoint = [t]
+
+    overlap = sp.vdot(Psi, vec)
+    overlapr = sp.vdot(overlap, overlap).real
+
+    datapoint.append(overlapr)
+
+    return datapoint
+
+def RecordOverlap(overlap, outdir, T):
+    " Output overlap (in time) to data file. "
+    path = os.path.dirname(os.path.realpath(__file__)) + "/" + \
+        outdir + "/overlap" + str(T) + ".dat"
+    sp.savetxt(path, overlap)
+
+def PlotOverlap(overlap, outdir, T):
+    " Plot the overlap. "
+    import pylab as pl
+
+    path = os.path.dirname(os.path.realpath(__file__)) + "/" + \
+        outdir + "/overlap" + str(T) + ".png"
+
+    # Clear figure
+    pl.clf()
+
+    # Get columns of eigspec to plot
+    t = [ row[0] for row in overlap ]
+    for i in range(1,len(overlap[0])): 
+        pl.plot(t, [ row[i] for row in overlap ], marker='.', linestyle='')
+
+    pl.xlim([0, T])
+    pl.xlabel(r'$Time$')
+    pl.ylabel(r'Overlap $\|\langle \psi \| \phi_0\rangle\|^2$')
+    pl.savefig(path)
+
 def RecordFidelity(Psi, vecs, T, outdir):
     " Output the fidelity for multi-T simulations by calculating \
       the overlap between however many eigenstates we want. "
@@ -67,8 +104,8 @@ def PlotFidelity(data, outdir):
 
     T = [ row[0] for row in data ]
     for i in range(1, len(data[0])):
-        pl.plot(T, [ row[i] for row in data ], marker='o')
+        pl.plot(T, [ row[i] for row in data ], marker='o', linestyle='')
 
     pl.xlabel(r'T (anneal time)')
-    pl.ylabel(r'Fidelity $\|\langle \psi \| \phi_0\rangle\|^2$')
+    pl.ylabel(r'Fidelity $\|\langle \psi \| \phi_n\rangle\|^2$')
     pl.savefig(path)
