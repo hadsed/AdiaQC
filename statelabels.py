@@ -65,7 +65,7 @@ def SortStateProbabilities(n, Psi, bitstring):
 
     # Get probability density
     density = sp.zeros(2**n)
-    for i in range(2**n) : density[i] = (sp.vdot(Psi[i],Psi[i])**2).real
+    for i in range(2**n) : density[i] = sp.vdot(Psi[i],Psi[i]).real
 
     # Sort by probability amplitudes
     sortperm = density.argsort()[::-1] # Flip order of argsort (descending)

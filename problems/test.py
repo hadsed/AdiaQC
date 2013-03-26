@@ -10,8 +10,8 @@ Description: The test problem.
 import scipy as sp
 
 nQubits = 2
-#T = 20.0
-T = range(1, 110, 9) # Output a sequence of anneal times
+#T = 100.0
+T = range(2, 23, 4) # Output a sequence of anneal times
 dt = 0.1
 
 # Output parameters
@@ -21,10 +21,11 @@ eigspecplot = 1 # Plot eigspec
 eigspecnum = 2**nQubits # Number of eigenvalues
 fidelplot = 1 # Plot fidelity
 fideldat = 1 # Output fidelity data
-fidelnumstates = 1 #2**nQubits # Check fidelity with this number of eigenstates
+fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
 overlapdat = 1 # Output overlap data
 overlapplot = 1 # Plot overlap
 outputdir = 'data/' # In relation to run.py
+probout = 0 # Calculate final state probabilities
 
 errchk = 1 # Error-checking on/off
 eps = 0.01 # Numerical error in normalization condition (1 - norm < eps)
@@ -38,5 +39,5 @@ a = sp.ones(nQubits)
 # Only if ising = 0; set all to empty SciPy arrays for default coefficients
 #alpha = beta = delta = sp.array([])
 alpha = sp.ones(2**nQubits)
-beta = sp.zeros((2**nQubits,2**nQubits))
+beta = sp.ones((2**nQubits,2**nQubits))
 delta = sp.array([])

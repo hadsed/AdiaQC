@@ -17,6 +17,7 @@ def DiagHam(alpha, beta, delta, t, T):
     " Get exact eigen states/energies from H. "
 
     H = 1/T*(t*(alpha + beta) + (T - t)*delta) # Exact Hamiltonian
+    #if (~(sp.matrix.getH(H) == H).any()): print ("H is not Hermitian at time "+str(t))
     return sp.linalg.eigh(H)
 
 def CheckNorm(t, nQubits, Psi, Hvecs, eps):
@@ -24,8 +25,7 @@ def CheckNorm(t, nQubits, Psi, Hvecs, eps):
     norm = 0.0
 
     for i in range(0, 2**nQubits): 
-        braket = sp.vdot(Psi, Hvecs[i])
-        norm += sp.vdot(braket, braket).real
+        norm += abs(sp.vdot(Psi, Hvecs[i]))**2
 
     if ( (1.0 - norm) > eps ): 
         print (str((1.0 - norm)) + " (norm error) > " + str(eps) + " (eps) @ t = " + str(t))
@@ -52,6 +52,12 @@ def ExpPert(nQubits, alpha, beta, delta, Psi, T, dt, errchk, eps, outinfo):
         # Get eigendecomposition of true Hamiltonian if necessary
         if (errchk | outinfo['eigdat'] | outinfo['fiddat']): 
             Hvals, Hvecs = DiagHam(alpha, beta, delta, t, T)
+
+            # Sort by eigenvalues
+            idx = Hvals.argsort()
+            Hvals = Hvals[idx]
+            Hvecs = Hvecs[:,idx]
+            Hvecs = sp.transpose(Hvecs) # So we can grab them as vectors
         
         # Check for numerical error
         if (errchk):

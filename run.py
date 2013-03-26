@@ -67,7 +67,8 @@ outinfo = { 'eigdat': params.eigspecdat,
             'fidnumstates': params.fidelnumstates,
             'overlapdat': params.overlapdat,
             'overlapplot': params.overlapplot,
-            'outdir': params.outputdir }
+            'outdir': params.outputdir,
+            'probout': params.probout }
 
 # Turn off all outputs (potentially)
 if (params.output == 0):
@@ -109,31 +110,53 @@ if isinstance(T, collections.Iterable):
             from solve import output
 
             Hvals, Hvecs = sp.linalg.eigh(alpha + beta)
+            
+            # Sort by eigenvalues
+            idx = Hvals.argsort()
+            Hvals = Hvals[idx]
+            Hvecs = Hvecs[:,idx]
+            Hvecs = sp.transpose(Hvecs) # So we can grab them as vectors
 
             if outinfo['fiddat']: # Output fidelity data
-                d = solve.output.RecordFidelity(Psi, Hvecs[0:outinfo['fidnumstates']], 
+                d = solve.output.ConstructFidelityData(Psi, Hvecs[0:outinfo['fidnumstates']], 
                                                 T[i], outinfo['outdir'])
 
                 for i in range(0, outinfo['fidnumstates']): fidelitydata.append(d[i])
 
+    # Sort fidelity data
+    if (outinfo['fiddat'] | outinfo['fidplot']): 
+        fidelitydata, fidelitydataplot = solve.output.SortFidelity(outinfo['fidnumstates'], fidelitydata)
+
     # Write out fidelity data
-    if outinfo['fiddat']:
-        path = os.path.dirname(os.path.realpath(__file__)) + "/" + outinfo['outdir'] + "/fidelity.dat"
-        sp.savetxt(path, fidelitydata)
+    if outinfo['fiddat']: solve.output.RecordFidelity(fidelitydata, outinfo['outdir'])
 
     # Plot fidelity(T)
-    if outinfo['fidplot']:
-        solve.output.PlotFidelity(fidelitydata, outinfo['outdir'])
+    if outinfo['fidplot']: solve.output.PlotFidelity(fidelitydataplot, outinfo['outdir'],
+                                                     outinfo['fidnumstates'])
+
+    if outinfo['probout']:
+        # Get state labelings, sort them in descending order
+        bitstring = statelabels.GenerateLabels(nQubits)
+        bitstring, density = statelabels.SortStateProbabilities(nQubits, Psi, bitstring)
+
+        print ("\nProbability (T = "+str(list(T)[-1])+"):")
+        for i in range(2**nQubits):
+            outstr = bitstring[i] + '\t' + '%.8E' % density[i]
+            print (outstr)
 
 else:
     Psi = solve.ExpPert(nQubits, alpha, beta, delta, Psi, T, dt, 
                         errchk, eps, outinfo)
+    print ("\nState (T = "+str(T)+"):")
+    print (Psi)
+    print ("\n")
 
-# Get state labelings, sort them in descending order
-bitstring = statelabels.GenerateLabels(nQubits)
-bitstring, density = statelabels.SortStateProbabilities(nQubits, Psi, bitstring)
+    if outinfo['probout']:
+        # Get state labelings, sort them in descending order
+        bitstring = statelabels.GenerateLabels(nQubits)
+        bitstring, density = statelabels.SortStateProbabilities(nQubits, Psi, bitstring)
 
-print ("Probability:")
-for i in range(2**nQubits):
-    outstr = bitstring[i] + '\t' + '%.8E' % density[i]
-    print (outstr)
+        print ("Probability (T = "+str(T)+"):")
+        for i in range(2**nQubits):
+            outstr = bitstring[i] + '\t' + '%.8E' % density[i]
+            print (outstr)
