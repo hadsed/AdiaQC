@@ -39,7 +39,7 @@ def ExpPert(nQubits, alpha, beta, delta, Psi, T, dt, errchk, eps, outinfo):
     N = T/dt # steps
 
     # Loop over time
-    for i in range(0, int(sp.floor(N)) + 1):
+    for i in range(0, int(sp.floor(N))):
         t = i*dt
         t0 = (i-1)*dt
 

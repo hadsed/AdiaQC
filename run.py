@@ -92,17 +92,18 @@ else:
         delta = initialize.DeltaCoeffs(nQubits)
 
 # Initial state
-Psi = initialize.InitialState(delta)
-
+Psi0 = initialize.InitialState(delta)
+Psi = sp.empty(2**nQubits)
+#delta = 0
 print ("Initial state:")
-print (Psi)
+print (Psi0)
 
 # Determine if we're doing multiple simulations over T
 if isinstance(T, collections.Iterable):
     if outinfo['fiddat']: fidelitydata = []
 
     for i in range(0, len(T)): # Go through all the T's
-        Psi = solve.ExpPert(nQubits, alpha, beta, delta, Psi, T[i], dt, \
+        Psi = solve.ExpPert(nQubits, alpha, beta, delta, Psi0, T[i], dt, \
                              errchk, eps, outinfo)
 
         # Do fidelity stuff
@@ -117,9 +118,10 @@ if isinstance(T, collections.Iterable):
             Hvecs = Hvecs[:,idx]
             Hvecs = sp.transpose(Hvecs) # So we can grab them as vectors
 
-            if outinfo['fiddat']: # Output fidelity data
+            # Construct fidelity data
+            if outinfo['fiddat']:
                 d = solve.output.ConstructFidelityData(Psi, Hvecs[0:outinfo['fidnumstates']], 
-                                                T[i], outinfo['outdir'])
+                                                       T[i], outinfo['outdir'])
 
                 for i in range(0, outinfo['fidnumstates']): fidelitydata.append(d[i])
 
@@ -145,12 +147,10 @@ if isinstance(T, collections.Iterable):
             print (outstr)
 
 else:
-    Psi = solve.ExpPert(nQubits, alpha, beta, delta, Psi, T, dt, 
+    Psi = solve.ExpPert(nQubits, alpha, beta, delta, Psi0, T, dt, 
                         errchk, eps, outinfo)
-    print ("\nState (T = "+str(T)+"):")
+    sp.set_printoptions(precision=16)
     print (Psi)
-    print ("\n")
-
     if outinfo['probout']:
         # Get state labelings, sort them in descending order
         bitstring = statelabels.GenerateLabels(nQubits)
