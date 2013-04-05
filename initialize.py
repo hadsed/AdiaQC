@@ -21,11 +21,16 @@ def InitialState(delta):
 
     # Ugly casting hack
     Psi = sp.transpose(sp.matrix(sp.transpose(eigvec))[0])
+
     return Psi
 
 def QUBO2Ising(Q, a):
     " Convert QUBO problem to Ising model, construct and output \
       the Ising Hamiltonian. "
+
+    # Make sure we've got floats
+    a = a.astype(sp.float64)
+    Q = Q.astype(sp.float64)
 
     ##### Convert to Ising ######
     s = 2*a - 1
@@ -93,7 +98,7 @@ def IsingHamiltonian(n, h, J):
 
     return [alpha, beta, delta]
 
-def HamiltonianGen(n):
+def HamiltonianGen(n, a, b, d):
     " Generate default Hamiltonian coefficients. "
 
     ### Construct Hamiltonian ###
@@ -116,7 +121,7 @@ def HamiltonianGen(n):
             temp = sp.kron(temp, matrices[0])
             matrices.pop(0)
 
-        alpha = alpha + temp
+        alpha = alpha + temp*a[i]
 
     temp = 0
 
@@ -134,7 +139,7 @@ def HamiltonianGen(n):
                     temp = sp.kron(temp, matrices[0])
                     matrices.pop(0)
 
-                beta = beta + temp
+                beta = beta + temp*b[i,j]
 
     temp = 0
 
@@ -149,11 +154,11 @@ def HamiltonianGen(n):
             temp = sp.kron(temp, matrices[0])
             matrices.pop(0)
 
-        delta += temp
+        delta += temp*d[i]
 
     return [alpha, beta, delta]
 
-def AlphaCoeffs(n):
+def AlphaCoeffs(n, a):
     " Construct the alpha coefficient matrix. "
     Z = sp.matrix([[1,0],[0,-1]])
     I = sp.identity(2)
@@ -170,11 +175,11 @@ def AlphaCoeffs(n):
             temp = sp.kron(temp, matrices[0])
             matrices.pop(0)
 
-        alpha = (alpha + temp)*h[i]
+        alpha = alpha + temp*a[i]
 
     return alpha
 
-def BetaCoeffs(n):
+def BetaCoeffs(n, b):
     " Calculate beta coefficients. "
     Z = sp.matrix([[1,0],[0,-1]])
     I = sp.identity(2)
@@ -194,7 +199,7 @@ def BetaCoeffs(n):
                     temp = sp.kron(temp, matrices[0])
                     matrices.pop(0)
 
-                beta = beta + temp
+                beta = beta + temp*b[i,j]
 
     return beta
 

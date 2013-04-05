@@ -10,9 +10,9 @@ Description: The test problem.
 import scipy as sp
 
 nQubits = 2
-#T = 14.0
-T = sp.arange(2,23,4.0) # Output a sequence of anneal times
-dt = 0.1
+T = 10.0
+#T = sp.arange(2,23,4.0) # Output a sequence of anneal times
+dt = 0.01
 
 # Output parameters
 output = 1 # Turn on/off all output except final probabilities
@@ -37,8 +37,11 @@ Q = sp.zeros((nQubits,nQubits))
 a = sp.ones(nQubits)
 
 # Only if ising = 0; set all to empty SciPy arrays for default coefficients
-#alpha = sp.identity(2**nQubits)
-#beta = sp.zeros((2**nQubits,2**nQubits))
-#delta = sp.zeros(2**nQubits)
-#delta = sp.array([])
-alpha = beta = delta = sp.array([])
+alpha = sp.ones(nQubits)
+#delta = sp.zeros(nQubits)
+#beta = sp.array([])
+delta = sp.array([])
+#alpha = beta = delta = sp.array([])
+beta = sp.zeros((nQubits,nQubits))
+beta[0,1] = 1
+beta[1,0] = beta[0,1]

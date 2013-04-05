@@ -16,7 +16,7 @@ import output
 def DiagHam(alpha, beta, delta, t, T):
     " Get exact eigen states/energies from H. "
 
-    H = 1/T*(t*(alpha + beta) + (T - t)*delta) # Exact Hamiltonian
+    H = -1/T*(t*(alpha + beta) + (T - t)*delta) # Exact Hamiltonian
     #if (~(sp.matrix.getH(H) == H).any()): print ("H is not Hermitian at time "+str(t))
     return sp.linalg.eigh(H)
 
@@ -44,7 +44,7 @@ def ExpPert(nQubits, alpha, beta, delta, Psi, T, dt, errchk, eps, outinfo):
         t0 = (i-1)*dt
 
         # Approximate Hamiltonian to first term in Magnus expansion (OPTIMIZE)
-        Hexp = 1/(2*T)*((t**2 - t0**2)*(alpha + beta) + (2*T*(t - t0) + t0**2 - t**2)*delta)
+        Hexp = -1/(2*T)*((t**2 - t0**2)*(alpha + beta) + (2*T*(t - t0) + t0**2 - t**2)*delta)
 
         A = linalg.expm(-1j*Hexp)
         Psi = A*Psi

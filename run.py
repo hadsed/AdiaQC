@@ -54,9 +54,12 @@ errchk = params.errchk
 eps = params.eps
 
 # Get user-specified coefficients
-alpha = params.alpha
-beta = params.beta
-delta = params.delta
+if (ising):
+    alpha = beta = delta = 0
+else:
+    alpha = params.alpha
+    beta = params.beta
+    delta = params.delta
 
 # Construct output parameters dictionary
 outinfo = { 'eigdat': params.eigspecdat, 
@@ -81,22 +84,24 @@ if (ising):
     alpha, beta, delta = initialize.IsingHamiltonian(nQubits, h, J)
 elif (alpha.size == 0 & beta.size == 0 & delta.size == 0):
     # Get default generated coefficients
-    alpha, beta, delta = initialize.HamiltonianGen(nQubits)
+    alpha, beta, delta = initialize.HamiltonianGen(nQubits, alpha, beta, delta)
 else:
     # Check if we need to generate individually
-    if (alpha.size == 0):
-        alpha = initialize.AlphaCoeffs(nQubits)
-    if (beta.size == 0):
-        beta = initialize.BetaCoeffs(nQubits)
-    if (delta.size == 0):
-        delta = initialize.DeltaCoeffs(nQubits)
+    if (alpha.size == 0): alpha = sp.ones(nQubits)
+    if (beta.size == 0): beta = sp.ones((nQubits, nQubits))
+    if (delta.size == 0): delta = sp.ones(nQubits)
+
+    alpha = initialize.AlphaCoeffs(nQubits, alpha)
+    beta = initialize.BetaCoeffs(nQubits, beta)
+    delta = initialize.DeltaCoeffs(nQubits)
 
 # Initial state
 Psi0 = initialize.InitialState(delta)
 Psi = sp.empty(2**nQubits)
-#delta = 0
-print ("Initial state:")
-print (Psi0)
+
+if outinfo['probout']:
+    print ("Initial state:")
+    print (Psi0)
 
 # Determine if we're doing multiple simulations over T
 if isinstance(T, collections.Iterable):
@@ -149,9 +154,10 @@ if isinstance(T, collections.Iterable):
 else:
     Psi = solve.ExpPert(nQubits, alpha, beta, delta, Psi0, T, dt, 
                         errchk, eps, outinfo)
-    sp.set_printoptions(precision=16)
-    print (Psi)
     if outinfo['probout']:
+        sp.set_printoptions(precision=16)
+        print (Psi)
+
         # Get state labelings, sort them in descending order
         bitstring = statelabels.GenerateLabels(nQubits)
         bitstring, density = statelabels.SortStateProbabilities(nQubits, Psi, bitstring)
