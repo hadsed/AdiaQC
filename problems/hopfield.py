@@ -10,8 +10,8 @@ Description: Parameters for a Hopfield neural network.
 import scipy as sp
 
 nQubits = 4
-T = 100.0
-#T = sp.arange(2,23,4.0) # Output a sequence of anneal times
+#T = 100.0
+T = sp.arange(2,23,4.0) # Output a sequence of anneal times
 dt = 0.01
 
 # Specify Ising coefficients (Q, a), or alpha, beta directly

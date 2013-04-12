@@ -18,6 +18,7 @@ def DiagHam(alpha, beta, delta, t, T):
 
     H = -1/T*(t*(alpha + beta) + (T - t)*delta) # Exact Hamiltonian
     #if (~(sp.matrix.getH(H) == H).any()): print ("H is not Hermitian at time "+str(t))
+
     return sp.linalg.eigh(H)
 
 def CheckNorm(t, nQubits, Psi, Hvecs, eps):

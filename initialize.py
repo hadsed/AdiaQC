@@ -158,6 +158,44 @@ def HamiltonianGen(n, a, b, d):
 
     return [alpha, beta, delta]
 
+def AlphaBetaCoeffs(n, a, b):
+    " Construct the alpha and beta coefficient matrices. "
+
+    Z = sp.matrix([[1,0],[0,-1]])
+    I = sp.identity(2)
+    alpha = sp.zeros((2**n,2**n))
+    beta = sp.zeros((2**n,2**n))
+    m1 = []
+    m2 = []
+
+    for i in range(0,n):
+        for m in range(0,n-1): m1.append(I)
+        m1.insert(i, Z)
+        temp1 = m1[0]
+        m[0].pop(0)
+
+        while (len(m1) != 0):
+            temp1 = sp.kron(temp1, m1[0])
+            m1.pop(0)
+
+        alpha += temp1*a[i]
+
+        for j in range(i+1, n):
+            for m in range(0, n-2): m2.append(I)f
+
+            m2.insert(i, Z)
+            m2.insert(j, Z)
+            temp2 = m2[0]
+            m2.pop(0)
+
+            while (len(m2) != 0):
+                temp2 = sp.kron(temp2, m2[0])
+                m2.pop(0)
+
+            beta += (temp2)*b[i,j]
+
+    return [alpha, beta]
+
 def AlphaCoeffs(n, a):
     " Construct the alpha coefficient matrix. "
     Z = sp.matrix([[1,0],[0,-1]])
@@ -175,35 +213,35 @@ def AlphaCoeffs(n, a):
             temp = sp.kron(temp, matrices[0])
             matrices.pop(0)
 
-        alpha = alpha + temp*a[i]
+        alpha += temp*a[i]
 
     return alpha
 
 def BetaCoeffs(n, b):
     " Calculate beta coefficients. "
+
     Z = sp.matrix([[1,0],[0,-1]])
     I = sp.identity(2)
     beta = sp.zeros((2**n,2**n))
     matrices = []
 
     for i in range(0,n):
-        for j in range(0,n):
-            if (i != j):
-                for m in range(0,n-2): matrices.append(I)
-                matrices.insert(i, Z)
-                matrices.insert(j, Z)
-                temp = matrices[0]
+        for j in range(i+1, n):
+            for m in range(0, n-2): matrices.append(I)
+            matrices.insert(i, Z)
+            matrices.insert(j, Z)
+            temp = matrices[0]
+            matrices.pop(0)
+
+            while (len(matrices) != 0):
+                temp = sp.kron(temp, matrices[0])
                 matrices.pop(0)
 
-                while (len(matrices) != 0):
-                    temp = sp.kron(temp, matrices[0])
-                    matrices.pop(0)
-
-                beta = beta + temp*b[i,j]
+            beta += (temp)*b[i,j]
 
     return beta
 
-def DeltaCoeffs(n):
+def DeltaCoeffs(n, d):
     " Calculate delta coefficients. "
     X = sp.matrix([[0,1],[1,0]])
     I = sp.identity(2)
@@ -220,6 +258,6 @@ def DeltaCoeffs(n):
             temp = sp.kron(temp, matrices[0])
             matrices.pop(0)
 
-        delta += temp
+        delta += temp*d[i]
 
     return delta

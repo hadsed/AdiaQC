@@ -1,9 +1,9 @@
 '''
 
-File: test.py
+File: test2.py
 Author: Hadayat Seddiqi
-Date: 3.18.13
-Description: The test problem.
+Date: 4.11.13
+Description: Testing for a ring graph.
 
 '''
 
@@ -33,13 +33,13 @@ eps = 0.01 # Numerical error in normalization condition (1 - norm < eps)
 # Specify Ising coefficients (Q, a), or alpha, beta directly
 ising = 0
 Q = sp.zeros((nQubits,nQubits))
-#Q = sp.ones((nQubits,nQubits)) - sp.identity(nQubits)
 a = sp.ones(nQubits)
 
 # Only if ising = 0; set all to empty SciPy arrays for default coefficients
 alpha = sp.ones(nQubits)
-#delta = sp.zeros(nQubits)
-#beta = sp.array([])
 delta = sp.array([])
-#alpha = beta = delta = sp.array([])
-beta = sp.zeros((nQubits,nQubits))
+beta = sp.matrix([[0,1,0,1],[1,0,1,0],[0,1,0,1],[1,0,1,0]])
+beta = beta.astype(sp.float64)
+
+print(alpha)
+print(beta)

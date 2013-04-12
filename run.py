@@ -36,7 +36,7 @@ except ImportError:
 
 # Create data directory
 pathpref =  os.path.dirname(os.path.realpath(__file__)) + "/"
-#os.makedirs(pathpref + params.outputdir, exist_ok=True) # The Python 3 way
+
 try:
     os.makedirs(pathpref + params.outputdir)
 except OSError:
@@ -90,13 +90,17 @@ else:
     if (alpha.size == 0): alpha = sp.ones(nQubits)
     if (beta.size == 0): beta = sp.ones((nQubits, nQubits))
     if (delta.size == 0): delta = sp.ones(nQubits)
+    if (alpha.size & beta.size == 1): 
+        alpha, beta = initialize.AlphaBetaCoeffs(nQubits, alpha, beta)
+        delta = initialize.DeltaCoeffs(nQubits, delta)
+    elif:
+        alpha = initialize.AlphaCoeffs(nQubits, alpha)
+        beta = initialize.BetaCoeffs(nQubits, beta)
+        delta = initialize.DeltaCoeffs(nQubits, delta)
 
-    alpha = initialize.AlphaCoeffs(nQubits, alpha)
-    beta = initialize.BetaCoeffs(nQubits, beta)
-    delta = initialize.DeltaCoeffs(nQubits)
 
 # Initial state
-Psi0 = initialize.InitialState(delta)
+Psi0 = initialize.InitialState(-delta)
 Psi = sp.empty(2**nQubits)
 
 if outinfo['probout']:
