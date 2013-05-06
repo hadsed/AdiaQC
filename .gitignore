@@ -4,6 +4,7 @@
 #*
 *#
 data/
+*data*/
 
 # C extensions
 *.so
