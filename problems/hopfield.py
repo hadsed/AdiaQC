@@ -20,7 +20,7 @@ Q = sp.empty((nQubits,nQubits))
 #Q = sp.ones((nQubits,nQubits)) - sp.identity(nQubits)
 
 neurons = nQubits
-G = 1 # Scale factor for input memory 'a'
+G = 10 # Scale factor for input memory 'a'
 memories = [ [1,1,1,1] ]
 inputstate = [1,1,1,1]
 
@@ -44,7 +44,7 @@ fideldat = 0 # Output fidelity data
 fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
 overlapdat = 0 # Output overlap data
 overlapplot = 0 # Plot overlap
-outputdir = 'hopdata/' # In relation to run.py
+outputdir = 'data/hopfield/' # In relation to run.py
 probout = 1 # Calculate final state probabilities
 
 errchk = 0 # Error-checking on/off

@@ -24,7 +24,7 @@ fideldat = 1 # Output fidelity data
 fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
 overlapdat = 1 # Output overlap data
 overlapplot = 1 # Plot overlap
-outputdir = 'data/' # In relation to run.py
+outputdir = 'data/test/' # In relation to run.py
 probout = 1 # Calculate final state probabilities
 
 errchk = 1 # Error-checking on/off
