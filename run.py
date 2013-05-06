@@ -45,8 +45,6 @@ except OSError:
 
 # Get parameters from problem file
 nQubits = params.nQubits
-Q = params.Q
-a = params.a
 T = params.T
 dt = params.dt
 ising = params.ising
@@ -55,7 +53,8 @@ eps = params.eps
 
 # Get user-specified coefficients
 if (ising):
-    alpha = beta = delta = 0
+    alpha = beta = delta = gamma = 0
+    Q = params.Q
 else:
     alpha = params.alpha
     beta = params.beta
@@ -80,8 +79,8 @@ if (params.output == 0):
 # Get our initial Hamiltonian coefficients
 if (ising):
     # Get Ising coefficients
-    h, J = initialize.QUBO2Ising(Q, a)
-    alpha, beta, delta = initialize.IsingHamiltonian(nQubits, h, J)
+    h, J, g = initialize.QUBO2Ising(Q)
+    alpha, beta, delta = initialize.IsingHamiltonian(nQubits, h, J, g)
 elif (alpha.size == 0 & beta.size == 0 & delta.size == 0):
     # Get default generated coefficients
     alpha, beta, delta = initialize.HamiltonianGen(nQubits, alpha, beta, delta)
@@ -93,7 +92,7 @@ else:
     if (alpha.size & beta.size == 1): 
         alpha, beta = initialize.AlphaBetaCoeffs(nQubits, alpha, beta)
         delta = initialize.DeltaCoeffs(nQubits, delta)
-    elif:
+    else:
         alpha = initialize.AlphaCoeffs(nQubits, alpha)
         beta = initialize.BetaCoeffs(nQubits, beta)
         delta = initialize.DeltaCoeffs(nQubits, delta)
@@ -109,7 +108,7 @@ if outinfo['probout']:
 
 # Determine if we're doing multiple simulations over T
 if isinstance(T, collections.Iterable):
-    if outinfo['fiddat']: fidelitydata = []
+    if (outinfo['fiddat'] | outinfo['fidplot']): fidelitydata = []
 
     for i in range(0, len(T)): # Go through all the T's
         Psi = solve.ExpPert(nQubits, alpha, beta, delta, Psi0, T[i], dt, \
@@ -128,7 +127,7 @@ if isinstance(T, collections.Iterable):
             Hvecs = sp.transpose(Hvecs) # So we can grab them as vectors
 
             # Construct fidelity data
-            if outinfo['fiddat']:
+            if (outinfo['fiddat'] | outinfo['fidplot']):
                 d = solve.output.ConstructFidelityData(Psi, Hvecs[0:outinfo['fidnumstates']], 
                                                        T[i], outinfo['outdir'])
 
@@ -160,7 +159,6 @@ else:
                         errchk, eps, outinfo)
     if outinfo['probout']:
         sp.set_printoptions(precision=16)
-        print (Psi)
 
         # Get state labelings, sort them in descending order
         bitstring = statelabels.GenerateLabels(nQubits)

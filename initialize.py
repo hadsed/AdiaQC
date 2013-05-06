@@ -24,23 +24,26 @@ def InitialState(delta):
 
     return Psi
 
-def QUBO2Ising(Q, a):
+def QUBO2Ising(Q):
     " Convert QUBO problem to Ising model, construct and output \
       the Ising Hamiltonian. "
 
     # Make sure we've got floats
-    a = a.astype(sp.float64)
     Q = Q.astype(sp.float64)
 
     ##### Convert to Ising ######
-    s = 2*a - 1
-    J = sp.array(0.25*Q)
-    h = 0.5*s + J.sum(axis=1)
-    g = J.sum() + 0.5*s.sum()
+    a = Q.diagonal()
+    nq = len(a)
+    Q = Q - Q.diagonal()*sp.identity(nq)
+    J = 0.25*Q
+    h = 0.5*a + (J + J.T).sum(axis=1)
+    g = J.sum() + 0.5*a.sum()
+    print (h)
+    print (J)
+    print (g)
+    return [h, J, g]
 
-    return [h, J]
-
-def IsingHamiltonian(n, h, J):
+def IsingHamiltonian(n, h, J, g):
     ### Construct Hamiltonian ###
     Z = sp.matrix([[1,0],[0,-1]])
     X = sp.matrix([[0,1],[1,0]])
@@ -61,7 +64,7 @@ def IsingHamiltonian(n, h, J):
             temp = sp.kron(temp, matrices[0])
             matrices.pop(0)
 
-        alpha = (alpha + temp)*h[i]
+        alpha = alpha + temp*h[i]
 
     temp = 0
 
@@ -79,8 +82,9 @@ def IsingHamiltonian(n, h, J):
                     temp = sp.kron(temp, matrices[0])
                     matrices.pop(0)
 
-                beta = (beta + temp)*J[i,j]
+                beta = beta + temp*J[i,j]
 
+    beta = beta + g*sp.identity(2**n)
     temp = 0
 
     # Calculate delta                                                                          
@@ -172,7 +176,7 @@ def AlphaBetaCoeffs(n, a, b):
         for m in range(0,n-1): m1.append(I)
         m1.insert(i, Z)
         temp1 = m1[0]
-        m[0].pop(0)
+        m1.pop(0)
 
         while (len(m1) != 0):
             temp1 = sp.kron(temp1, m1[0])
@@ -181,7 +185,7 @@ def AlphaBetaCoeffs(n, a, b):
         alpha += temp1*a[i]
 
         for j in range(i+1, n):
-            for m in range(0, n-2): m2.append(I)f
+            for m in range(0, n-2): m2.append(I)
 
             m2.insert(i, Z)
             m2.insert(j, Z)

@@ -14,24 +14,24 @@ Description: This is a test problem derived from Boxio et al. from
 import scipy as sp
 
 nQubits = 8
-#T = 100.0
-T = sp.arange(25,351,50) # Output a sequence of anneal times
+T = 20.0
+#T = sp.arange(1,10,0.5) # Output a sequence of anneal times
 dt = 0.01
 
 # Output parameters
 output = 1 # Turn on/off all output except final probabilities
-eigspecdat = 1 # Output data for eigspec
-eigspecplot = 1 # Plot eigspec
-eigspecnum = 20 # Number of eigenvalues
-fidelplot = 1 # Plot fidelity
-fideldat = 1 # Output fidelity data
+eigspecdat = 0 # Output data for eigspec
+eigspecplot = 0 # Plot eigspec
+eigspecnum = 2**nQubits # Number of eigenvalues
+fidelplot = 0 # Plot fidelity
+fideldat = 0 # Output fidelity data
 fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
-overlapdat = 1 # Output overlap data
-overlapplot = 1 # Plot overlap
+overlapdat = 0 # Output overlap data
+overlapplot = 0 # Plot overlap
 outputdir = 'data/' # In relation to run.py
 probout = 1 # Calculate final state probabilities
 
-errchk = 1 # Error-checking on/off
+errchk = 0 # Error-checking on/off
 eps = 0.01 # Numerical error in normalization condition (1 - norm < eps)
 
 # Specify Ising coefficients (Q, a), or alpha, beta directly
