@@ -16,7 +16,7 @@ dt = 0.1
 
 # Output parameters
 output = 1 # Turn on/off all output except final probabilities
-eigspecdat = 0 # Output data for eigspec
+eigspecdat = 1 # Output data for eigspec
 eigspecplot = 1 # Plot eigspec
 eigspecnum = 2**nQubits # Number of eigenvalues
 fidelplot = 1 # Plot fidelity
