@@ -14,9 +14,9 @@ Description: This is a test problem derived from Boxio et al. from
 import scipy as sp
 
 nQubits = 8
-T = 20.0
+T = 10.0
 #T = sp.arange(1,10,0.5) # Output a sequence of anneal times
-dt = 0.01
+dt = 0.1
 
 # Output parameters
 output = 1 # Turn on/off all output except final probabilities
@@ -47,3 +47,12 @@ alpha[0:4] = 1
 alpha[4:] = -1
 beta[0,1] = beta[1,2] = beta[2,3] = beta[3,0] = beta[0,4] = beta[1,5] = beta[2,6] = beta[3,7] = 1
 beta[1,0] = beta[2,1] = beta[3,2] = beta[0,3] = beta[4,0] = beta[5,1] = beta[6,2] = beta[7,3] = 1
+
+# We must do this because of Boixo's definition of the Ising Hamiltonian,
+# which has an overall negative sign
+alpha = -alpha
+beta = -beta
+
+print alpha*sp.identity(nQubits)
+print beta
+print delta

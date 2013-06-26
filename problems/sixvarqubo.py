@@ -13,20 +13,20 @@ Description: A six-variable QUBO test problem. Should
 import scipy as sp
 
 nQubits = 6
-T = 70.0
+T = 30.0
 #T = sp.arange(2,103,10) # Output a sequence of anneal times
 dt = 0.1
 
 # Output parameters
 output = 1 # Turn on/off all output except final probabilities
-eigspecdat = 1 # Output data for eigspec
-eigspecplot = 1 # Plot eigspec
+eigspecdat = 0 # Output data for eigspec
+eigspecplot = 0 # Plot eigspec
 eigspecnum = 2**nQubits # Number of eigenvalues
-fidelplot = 1 # Plot fidelity
+fidelplot = 0 # Plot fidelity
 fideldat = 0 # Output fidelity data
 fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
-overlapdat = 1 # Output overlap data
-overlapplot = 1 # Plot overlap
+overlapdat = 0 # Output overlap data
+overlapplot = 0 # Plot overlap
 outputdir = 'data/sixvarqubodata/' # In relation to run.py
 probout = 1 # Calculate final state probabilities
 
@@ -66,3 +66,5 @@ Q[3,5] = Q[5,3] = -1
 Q[4,5] = Q[5,4] = 2
 
 Q = sp.triu(Q) + a*sp.identity(6)
+
+print Q

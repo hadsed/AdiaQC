@@ -38,9 +38,7 @@ def QUBO2Ising(Q):
     J = 0.25*Q
     h = 0.5*a + (J + J.T).sum(axis=1)
     g = J.sum() + 0.5*a.sum()
-    print(h)
-    print(J)
-    print(g)
+
     return [h, J, g]
 
 def IsingHamiltonian(n, h, J, g):

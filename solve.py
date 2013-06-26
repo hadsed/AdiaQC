@@ -16,7 +16,7 @@ import output
 def DiagHam(alpha, beta, delta, t, T, n):
     " Get exact eigen states/energies from H. "
 
-    H = 1/T*(t*(-alpha - beta) - (T - t)*delta)
+    H = -1/T*(t*(-alpha + beta) - (T - t)*delta)
 
     return sp.linalg.eigh(H)
 
@@ -44,8 +44,11 @@ def ExpPert(nQubits, alpha, beta, delta, Psi, T, dt, errchk, eps, outinfo):
         t0 = (i-1)*dt
 
         # Approximate Hamiltonian to first term in Magnus expansion (OPTIMIZE)
-        Hexp = 1/(2*T)*((t**2 - t0**2)*(-alpha - beta) - \
-                         (2*T*(t - t0) + t0**2 - t**2)*delta)
+
+        # The sign on alpha is flipped so that the output probabilities are
+        # interpreted as 1 being up and zero being down, which is more intuitive.
+        Hexp = 1/(2*T)*((t**2 - t0**2)*(alpha - beta) + \
+                        (2*T*(t - t0) + t0**2 - t**2)*delta)
 
         A = linalg.expm(-1j*Hexp)
         Psi = A*Psi

@@ -9,7 +9,7 @@ Description: Parameters for a Hopfield neural network.
 
 import scipy as sp
 
-nQubits = 7
+nQubits = 4
 T = 10.0
 #T = sp.arange(2,23,4.0) # Output a sequence of anneal times
 dt = 0.01
@@ -37,11 +37,11 @@ Q = sp.zeros((nQubits,nQubits))
 
 neurons = nQubits
 G = -0.25 # Scale factor for input memory 'a'
-#memories = [ [1,-1,-1,1], [-1,-1,-1,-1] ]
-memories = [ [-1,-1,-1,-1,-1,-1,-1], [1,1,1,1,1,1,1] ]
+memories = [ [1,-1,-1,1]]#, [-1,-1,-1,-1] ]
+#memories = [ [-1,-1,-1,-1,-1,-1,-1], [1,1,1,1,1,1,1] ]
 #memories = [ [1,1,1,-1,-1,-1,-1] ]
-#inputstate = [0,0,0,0]
-inputstate = [-1,-1,-1,-1,-1,-1,-1]
+inputstate = [0,0,0,0]
+#inputstate = [-1,-1,-1,-1,-1,-1,-1]
 #inputstate = [0,0,0,0,0,0,0]
 
 # Construct pattern matrix
