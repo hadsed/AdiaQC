@@ -37,10 +37,10 @@ Q = sp.zeros((nQubits,nQubits))
 
 neurons = nQubits
 G = -0.25 # Scale factor for input memory 'a'
-memories = [ [1,-1,-1,1]]#, [-1,-1,-1,-1] ]
+memories = [sp.array([1,1,-1,-1])*-1]
 #memories = [ [-1,-1,-1,-1,-1,-1,-1], [1,1,1,1,1,1,1] ]
 #memories = [ [1,1,1,-1,-1,-1,-1] ]
-inputstate = [0,0,0,0]
+inputstate = sp.array([-1,-1,-1,-1])*1
 #inputstate = [-1,-1,-1,-1,-1,-1,-1]
 #inputstate = [0,0,0,0,0,0,0]
 
@@ -51,11 +51,7 @@ for p in range(len(memories)):
             # Encode input state on diagonal
             if (i == j) : Q[i,j] = G*inputstate[i]
             # Encode memories using Hebb's rule
-            else: 
-                Q[i,j] += memories[p][i]*memories[p][j]
-                print(i,j)
-                print(memories[p][i]*memories[p][j])
-                print(Q[i,j])
+            else: Q[i,j] += memories[p][i]*memories[p][j]
 
 
 # Q must be triangular, normalize the weightings too

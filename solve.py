@@ -16,7 +16,7 @@ import output
 def DiagHam(alpha, beta, delta, t, T, n):
     " Get exact eigen states/energies from H. "
 
-    H = -1/T*(t*(-alpha + beta) - (T - t)*delta)
+    H = -1/T*(t*(alpha - beta) + (T - t)*delta)
 
     return sp.linalg.eigh(H)
 
@@ -47,7 +47,7 @@ def ExpPert(nQubits, alpha, beta, delta, Psi, T, dt, errchk, eps, outinfo):
 
         # The sign on alpha is flipped so that the output probabilities are
         # interpreted as 1 being up and zero being down, which is more intuitive.
-        Hexp = 1/(2*T)*((t**2 - t0**2)*(alpha - beta) + \
+        Hexp = -1/(2*T)*((t**2 - t0**2)*(alpha - beta) + \
                         (2*T*(t - t0) + t0**2 - t**2)*delta)
 
         A = linalg.expm(-1j*Hexp)
@@ -55,7 +55,7 @@ def ExpPert(nQubits, alpha, beta, delta, Psi, T, dt, errchk, eps, outinfo):
 
         # Get eigendecomposition of true Hamiltonian if necessary
         if (errchk | outinfo['eigdat'] | outinfo['eigplot'] \
-                   | outinfo['fiddat'] | outinfo['fidplot']): 
+                   | outinfo['fiddat'] | outinfo['fidplot']):
             Hvals, Hvecs = DiagHam(alpha, beta, delta, t, T, nQubits)
 
             # Sort by eigenvalues

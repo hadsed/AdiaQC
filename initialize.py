@@ -34,10 +34,13 @@ def QUBO2Ising(Q):
     ##### Convert to Ising ######
     a = Q.diagonal()
     nq = len(a)
-    Q = Q - Q.diagonal()*sp.identity(nq)
+    Q = Q - sp.array(a)*sp.identity(nq)
     J = 0.25*Q
-    h = 0.5*a + (J + J.T).sum(axis=1)
+    h = 0.5*a + (J + J.T).sum(axis=0)
     g = J.sum() + 0.5*a.sum()
+
+    # Quick hack to make 'h' an actual array
+    h = sp.squeeze(sp.asarray(h))
 
     return [h, J, g]
 
