@@ -13,10 +13,10 @@ from scipy import linalg
 
 import output
 
-def DiagHam(alpha, beta, delta, t, T, n):
+def DiagHam(hz, hzz, hx, t, T, n):
     " Get exact eigen states/energies from H. "
 
-    H = -1/T*(t*(alpha - beta) + (T - t)*delta)
+    H = 1/T*(t*(hz + hzz) + (T - t)*hx)
 
     return sp.linalg.eigh(H)
 
@@ -30,7 +30,7 @@ def CheckNorm(t, nQubits, Psi, Hvecs, eps):
     if ( (1.0 - norm) > eps ): 
         print (str((1.0 - norm)) + " (norm error) > " + str(eps) + " (eps) @ t = " + str(t))
 
-def ExpPert(nQubits, alpha, beta, delta, Psi, T, dt, errchk, eps, outinfo):
+def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
     " Solve using exponential perturbation theory (i.e. Magnus expansion). "
 
     if (outinfo['eigdat'] | outinfo['eigplot']): eigspec = []
@@ -46,9 +46,13 @@ def ExpPert(nQubits, alpha, beta, delta, Psi, T, dt, errchk, eps, outinfo):
         # Approximate Hamiltonian to first term in Magnus expansion (OPTIMIZE)
 
         # The sign on alpha is flipped so that the output probabilities are
-        # interpreted as 1 being up and zero being down, which is more intuitive.
-        Hexp = -1/(2*T)*((t**2 - t0**2)*(alpha - beta) + \
-                        (2*T*(t - t0) + t0**2 - t**2)*delta)
+        # interpreted as 1 being up and 0 being down, which is more intuitive.
+#        Hexp = -1/(2*T)*((t**2 - t0**2)*(alpha - beta) + \
+#                        (2*T*(t - t0) + t0**2 - t**2)*delta)
+
+        # This Hamiltonian should have user-specified signs already
+        Hexp = 1/(2*T)*((t**2 - t0**2)*(hz + hzz) + \
+                        (2*T*(t - t0) + t0**2 - t**2)*hx)
 
         A = linalg.expm(-1j*Hexp)
         Psi = A*Psi
@@ -56,7 +60,7 @@ def ExpPert(nQubits, alpha, beta, delta, Psi, T, dt, errchk, eps, outinfo):
         # Get eigendecomposition of true Hamiltonian if necessary
         if (errchk | outinfo['eigdat'] | outinfo['eigplot'] \
                    | outinfo['fiddat'] | outinfo['fidplot']):
-            Hvals, Hvecs = DiagHam(alpha, beta, delta, t, T, nQubits)
+            Hvals, Hvecs = DiagHam(hz, hzz, hx, t, T, nQubits)
 
             # Sort by eigenvalues
             idx = Hvals.argsort()

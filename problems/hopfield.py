@@ -30,32 +30,28 @@ probout = 1 # Calculate final state probabilities
 errchk = 0 # Error-checking on/off
 eps = 0.01 # Numerical error in normalization condition (1 - norm < eps)
 
-# Specify Ising coefficients (Q, a), or alpha, beta directly
-ising = 1
-Q = sp.zeros((nQubits,nQubits))
-#Q = sp.ones((nQubits,nQubits)) - sp.identity(nQubits)
+# Specify a QUBO (convert to Ising = True), or alpha, beta directly 
+# (convert = False), and also specify the signs on the Ising Hamiltonian 
+# terms (you can specify coefficients too for some problems if needed)
+isingConvert = 0
+isingSigns = {'hx': -1, 'hz': -1, 'hzz': -1}
 
 neurons = nQubits
-G = -0.25 # Scale factor for input memory 'a'
-memories = [sp.array([1,1,-1,-1])*-1]
-#memories = [ [-1,-1,-1,-1,-1,-1,-1], [1,1,1,1,1,1,1] ]
-#memories = [ [1,1,1,-1,-1,-1,-1] ]
-inputstate = sp.array([-1,-1,-1,-1])*1
-#inputstate = [-1,-1,-1,-1,-1,-1,-1]
-#inputstate = [0,0,0,0,0,0,0]
+memories = [ [1,1,1,1], [-1,1,-1,1], [1,-1,1,-1] ]
+inputstate = [1,1,0,0]
+# This is gamma, the appropriate weighting on the input vector
+isingSigns['hz'] *= 1 - (len(inputstate) - inputstate.count(0))/(2*neurons)
+
+alpha = sp.array(inputstate)
+beta = sp.zeros((neurons,neurons))
+delta = sp.array([])
 
 # Construct pattern matrix
-for p in range(len(memories)):
-    for i in range(neurons):
-        for j in range(neurons):
-            # Encode input state on diagonal
-            if (i == j) : Q[i,j] = G*inputstate[i]
-            # Encode memories using Hebb's rule
-            else: Q[i,j] += memories[p][i]*memories[p][j]
+for i in range(neurons):
+    for j in range(neurons):
+        for p in range(len(memories)):
+            beta[i,j] += ( memories[p][i]*memories[p][j] -
+                           len(memories)*(i == j) )
 
-
-# Q must be triangular, normalize the weightings too
-Q = sp.triu(Q, 1)/neurons + Q.diagonal()*sp.identity(neurons)
-#Q = sp.triu(Q)
-print(Q)
-
+beta = sp.triu(beta)/float(neurons)
+print beta

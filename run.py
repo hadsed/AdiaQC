@@ -47,12 +47,13 @@ except OSError:
 nQubits = params.nQubits
 T = params.T
 dt = params.dt
-ising = params.ising
 errchk = params.errchk
 eps = params.eps
+isingConvert = params.isingConvert
+isingSigns = params.isingSigns
 
 # Get user-specified coefficients
-if (ising):
+if (isingConvert):
     alpha = beta = delta = gamma = 0
     Q = params.Q
 else:
@@ -77,30 +78,34 @@ if (params.output == 0):
     for param in outinfo: outinfo[param] = 0
 
 # Get our initial Hamiltonian coefficients
-if (ising):
+if (isingConvert):
     # Get Ising coefficients
     h, J, g = initialize.QUBO2Ising(Q)
-    alpha, beta, delta = initialize.IsingHamiltonian(nQubits, h, J, g)
+    hz, hzz, hx = initialize.IsingHamiltonian(nQubits, h, J, g)
 elif (alpha.size == 0 & beta.size == 0 & delta.size == 0):
     # Get default generated coefficients
-    alpha, beta, delta = initialize.HamiltonianGen(nQubits, alpha, beta, delta)
+    hz, hzz, hx = initialize.HamiltonianGen(nQubits, alpha, beta, delta)
 else:
     # Check if we need to generate individually
     if (alpha.size == 0): alpha = sp.ones(nQubits)
     if (beta.size == 0): beta = sp.ones((nQubits, nQubits))
     if (delta.size == 0): delta = sp.ones(nQubits)
     if (alpha.size & beta.size == 1): 
-        alpha, beta = initialize.AlphaBetaCoeffs(nQubits, alpha, beta)
-        delta = initialize.DeltaCoeffs(nQubits, delta)
+        hz, hzz = initialize.AlphaBetaCoeffs(nQubits, alpha, beta)
+        hx = initialize.DeltaCoeffs(nQubits, delta)
     else:
-        alpha = initialize.AlphaCoeffs(nQubits, alpha)
-        beta = initialize.BetaCoeffs(nQubits, beta)
-        delta = initialize.DeltaCoeffs(nQubits, delta)
-
+        hz = initialize.AlphaCoeffs(nQubits, alpha)
+        hzz = initialize.BetaCoeffs(nQubits, beta)
+        hx = initialize.DeltaCoeffs(nQubits, delta)
 
 # Initial state
-Psi0 = initialize.InitialState(-delta)
+Psi0 = initialize.InitialState(-hx)
 Psi = sp.empty(2**nQubits)
+
+# Apply signs to our operators
+hz *= isingSigns['hz']
+hzz *= isingSigns['hzz']
+hx *= isingSigns['hx']
 
 if outinfo['probout']:
     print ("Initial state:")
@@ -111,14 +116,14 @@ if isinstance(T, collections.Iterable):
     if (outinfo['fiddat'] | outinfo['fidplot']): fidelitydata = []
 
     for i in range(0, len(T)): # Go through all the T's
-        Psi = solve.ExpPert(nQubits, alpha, beta, delta, Psi0, T[i], dt, \
+        Psi = solve.ExpPert(nQubits, hz, hzz, hx, Psi0, T[i], dt, \
                              errchk, eps, outinfo)
 
         # Do fidelity stuff
         if ( outinfo['fiddat'] | outinfo['fidplot'] ):
             from solve import output
 
-            Hvals, Hvecs = sp.linalg.eigh(alpha + beta)
+            Hvals, Hvecs = sp.linalg.eigh(hz + hzz)
             
             # Sort by eigenvalues
             idx = Hvals.argsort()
@@ -131,7 +136,8 @@ if isinstance(T, collections.Iterable):
                 d = solve.output.ConstructFidelityData(Psi, Hvecs[0:outinfo['fidnumstates']], 
                                                        T[i], outinfo['outdir'])
 
-                for i in range(0, outinfo['fidnumstates']): fidelitydata.append(d[i])
+                for i in range(0, outinfo['fidnumstates']):
+                    fidelitydata.append(d[i])
 
     # Sort fidelity data
     if (outinfo['fiddat'] | outinfo['fidplot']): 
@@ -155,7 +161,7 @@ if isinstance(T, collections.Iterable):
             print (outstr)
 
 else:
-    Psi = solve.ExpPert(nQubits, alpha, beta, delta, Psi0, T, dt, 
+    Psi = solve.ExpPert(nQubits, hz, hzz, hx, Psi0, T, dt, 
                         errchk, eps, outinfo)
     if outinfo['probout']:
         sp.set_printoptions(precision=16)

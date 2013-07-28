@@ -35,7 +35,9 @@ errchk = 0 # Error-checking on/off
 eps = 0.01 # Numerical error in normalization condition (1 - norm < eps)
 
 # Specify Ising coefficients (Q, a), or alpha, beta directly
-ising = 0
+isingConvert = 0
+isingSigns = {'hx': -1, 'hz': 1, 'hzz': 1}
+
 Q = sp.zeros((nQubits,nQubits))
 a = sp.ones(nQubits)
 
