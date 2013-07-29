@@ -25,11 +25,20 @@ if __name__=="__main__":
     (options, args) = parser.parse_args()
     problem = options.problem
 
+# Parse the dirs
+problem = problem.replace('/', '.')
+problemPath = ''
+while problem.rfind('.') > 0:
+    idx = problem.rfind('.') + 1
+    problemPath = problem[0:idx]
+    problem = problem[idx:]
+
 # Import proper problem file
-if problem.endswith('.py'): problem = problem[:-3]
+if problem.endswith('.py'): 
+    problem = problem[:-3]
 
 try:
-    params = __import__("problems." + problem, fromlist=[problem])
+    params = __import__("problems." + problemPath + problem, fromlist=[problem])
 except ImportError:
     print ("Unable to import config file for '%s'." % problem)
     raise SystemExit
