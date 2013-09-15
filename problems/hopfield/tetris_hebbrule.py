@@ -2,9 +2,8 @@
 
 File: tetris.py
 Author: Hadayat Seddiqi
-Date: 9.8.13
-Description: Recognize tetris pieces with a quantum Hopfield network but
-             using the projection (pseudo-inverse) learning rule.
+Date: 4.5.13
+Description: Recognize tetris pieces with a quantum Hopfield network.
 
 '''
 
@@ -48,14 +47,18 @@ memories = [ [ 1,-1, 1,-1],
 inputstate = [1, 1, -1, 1]
 
 # This is gamma, the appropriate weighting on the input vector
-isingSigns['hz'] *= (1 - (len(inputstate) - inputstate.count(0))/(2*neurons))
+isingSigns['hz'] *= 1 - (len(inputstate) - inputstate.count(0))/(2*neurons)
 
 alpha = sp.array(inputstate)
 beta = sp.zeros((neurons,neurons))
 delta = sp.array([])
 
-# Construct the memory matrix according to the Moore-Penrose pseudoinverse rule
-memMat = sp.matrix(memories).T
-beta = sp.triu(memMat * sp.linalg.pinv(memMat))
-print memMat
+# Construct pattern matrix
+for i in range(neurons):
+    for j in range(neurons):
+        for p in range(len(memories)):
+            beta[i,j] += ( memories[p][i]*memories[p][j] -
+                           len(memories)*(i == j) )
+
+beta = sp.triu(beta)/float(neurons)
 print beta

@@ -2,14 +2,15 @@
 
 File: tetris.py
 Author: Hadayat Seddiqi
-Date: 4.5.13
-Description: Recognize tetris pieces with a quantum Hopfield network.
+Date: 9.14.13
+Description: Recognize tetris pieces with a quantum Hopfield network but
+             using the Storkey learning rule.
 
 '''
 
 import scipy as sp
 
-nQubits = 9
+nQubits = 4
 T = 10.0
 #T = sp.arange(2,23,4.0) # Output a sequence of anneal times
 dt = 0.01
@@ -37,36 +38,32 @@ isingConvert = 0
 isingSigns = {'hx': -1, 'hz': -1, 'hzz': -1}
 
 neurons = nQubits
-memories = [ [ 1, 1, 1, 1,   1,-1,-1, 1,   1,-1,-1, 1 ],  # Block
-             [ 1, 1, 1,-1,   1,-1,-1,-1,   1, 1, 1, 1 ],  # L
-             [ 1, 1, 1, 1,  -1, 1, 1, 1,  -1,-1,-1, 1 ],  # Reverse-L
-             [ 1,-1, 1, 1,   1,-1,-1, 1,   1, 1,-1, 1 ],  # S
-             [ 1, 1,-1, 1,   1,-1,-1, 1,   1,-1, 1, 1 ],  # Z
-             [ 1, 1, 1, 1,  -1,-1,-1,-1,   1, 1, 1, 1 ] ] # Long
+memories = [ [ 1,-1, 1,-1],
+             [-1, 1,-1, 1],
+             [ 1, 1,-1,-1],
+             [-1,-1, 1, 1],
+             [ 1,-1,-1, 1],
+             [-1, 1, 1,-1] ]
 
-memories = [ [ 1, 1, 1,   1,-1,-1,   1,-1,-1 ],  # Block
-             [ 1,-1, 1,   1,-1,-1,   1, 1,-1 ],  # S
-             [ 1,-1, 1,  -1,-1, 1,  -1, 1, 1 ],  # Z
-             [ 1, 1,-1,  -1,-1,-1,   1, 1, 1 ],  # L
-             [ 1, 1, 1,  -1, 1, 1,  -1,-1,-1 ] ] # Anti-L
-
-inputstate = [1,1,1,1,  1,-1,-1,-1,  1,-1,-1,1] # Almost a block
-
-inputstate = [1,1,1,  -1,-1,-1,  1,-1,-1] # Almost a block
+inputstate = [1, 1, -1, 1]
 
 # This is gamma, the appropriate weighting on the input vector
-isingSigns['hz'] *= 1 - (len(inputstate) - inputstate.count(0))/(2*neurons)
+isingSigns['hz'] *= (1 - (len(inputstate) - inputstate.count(0))/(2*neurons))
 
 alpha = sp.array(inputstate)
 beta = sp.zeros((neurons,neurons))
 delta = sp.array([])
 
-# Construct pattern matrix
-for i in range(neurons):
-    for j in range(neurons):
-        for p in range(len(memories)):
-            beta[i,j] += ( memories[p][i]*memories[p][j] -
-                           len(memories)*(i == j) )
+# Construct the memory matrix according to the Storkey learning rule
+memMat = sp.zeros((neurons,neurons))
+for m, mem in enumerate(memories):
+    for i in range(neurons):
+        for j in range(neurons):
+            hij = sp.sum([ memMat[i,k]*mem[k] for k in range(neurons) ])
+            hji = sp.sum([ memMat[j,k]*mem[k] for k in range(neurons) ])
+            # Don't forget to make the normalization a float!
+            memMat[i,j] += 1./neurons*(mem[i]*mem[j] - mem[i]*hji - hij*mem[j])
 
-beta = sp.triu(beta)/float(neurons)
+beta = sp.triu(memMat)
+print memMat
 print beta
