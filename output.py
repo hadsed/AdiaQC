@@ -120,7 +120,7 @@ def PlotFidelity(data, outdir, nstates):
     for state in range(nstates):
         T = [ row[0] for row in data[state] ]
         for i in range(1, len(data[state][0])):
-            pl.plot(T, [ row[i] for row in data[state] ], marker='.', linestyle='-')
+            pl.plot(T, [ row[i] for row in data[state] ], marker='', linestyle='-')
 
     pl.ylim([-0.1, 1.2])
     pl.xlabel(r'T (anneal time)')

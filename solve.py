@@ -33,10 +33,13 @@ def CheckNorm(t, nQubits, Psi, Hvecs, eps):
 def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
     " Solve using exponential perturbation theory (i.e. Magnus expansion). "
 
-    if (outinfo['eigdat'] | outinfo['eigplot']): eigspec = []
-    if (outinfo['overlapdat'] | outinfo['overlapplot']): overlap = []
+    if outinfo['eigdat'] or outinfo['eigplot']:
+        eigspec = []
+    if outinfo['overlapdat'] or outinfo['overlapplot']:
+        overlap = []
 
     N = T/dt # steps
+    mingap = None
 
     # Loop over time
     for i in range(0, int(sp.floor(N))):
@@ -58,8 +61,9 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
         Psi = A*Psi
 
         # Get eigendecomposition of true Hamiltonian if necessary
-        if (errchk | outinfo['eigdat'] | outinfo['eigplot'] \
-                   | outinfo['fiddat'] | outinfo['fidplot']):
+        if (errchk or outinfo['mingap']
+            or outinfo['eigdat'] or outinfo['eigplot']
+            or outinfo['fiddat'] or outinfo['fidplot']):
             Hvals, Hvecs = DiagHam(hz, hzz, hx, t, T, nQubits)
 
             # Sort by eigenvalues
@@ -67,22 +71,30 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
             Hvals = Hvals[idx]
             Hvecs = Hvecs[:,idx]
             Hvecs = sp.transpose(Hvecs) # So we can grab them as vectors
-        
+
+            if mingap is None:
+                mingap = sp.absolute(Hvals[1] - Hvals[0])
+            elif mingap > sp.absolute(Hvals[1] - Hvals[0]):
+                mingap = sp.absolute(Hvals[1] - Hvals[0])
+
         # Check for numerical error
         if (errchk):
             CheckNorm(t, nQubits, Psi, Hvecs, eps)
 
         # Construct eigenspectrum datapoint = [t, eigval 1, ... , eigval n]
-        if (outinfo['eigdat'] | outinfo['eigplot']):
+        if (outinfo['eigdat'] or outinfo['eigplot']):
             eigspec.append(output.ConstructEigData(t, Hvals, outinfo['eignum']))
 
-        if (outinfo['overlapdat'] | outinfo['overlapplot']):
+        if (outinfo['overlapdat'] or outinfo['overlapplot']):
             overlap.append(output.ConstructOverlapData(t, Psi, Hvecs[0]))
 
-    if (outinfo['eigdat']): output.RecordEigSpec(eigspec, outinfo['outdir'], T)
-    if (outinfo['eigplot']): output.PlotEigSpec(eigspec, outinfo['outdir'], T)
+    if (outinfo['eigdat']): 
+        output.RecordEigSpec(eigspec, outinfo['outdir'], T)
+    if (outinfo['eigplot']):
+        output.PlotEigSpec(eigspec, outinfo['outdir'], T)
+    if (outinfo['overlapdat']): 
+        output.RecordOverlap(overlap, outinfo['outdir'], T)
+    if (outinfo['overlapplot']): 
+        output.PlotOverlap(overlap, outinfo['outdir'], T)
 
-    if (outinfo['overlapdat']): output.RecordOverlap(overlap, outinfo['outdir'], T)
-    if (outinfo['overlapplot']): output.PlotOverlap(overlap, outinfo['outdir'], T)
-
-    return Psi
+    return Psi, mingap

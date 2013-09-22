@@ -30,6 +30,7 @@ overlapdat = 0 # Output overlap data
 overlapplot = 1 # Plot overlap
 outputdir = 'data/quantsigtest/' # In relation to run.py
 probout = 1 # Calculate final state probabilities
+mingap = 1 # Output the minimum spectral gap
 
 errchk = 0 # Error-checking on/off
 eps = 0.01 # Numerical error in normalization condition (1 - norm < eps)

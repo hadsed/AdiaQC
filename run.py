@@ -7,8 +7,7 @@ Description: Runs everything.
 
 '''
 
-import os
-import optparse
+import os, shutil, optparse
 import collections
 import scipy as sp
 from scipy import linalg
@@ -26,7 +25,7 @@ if __name__=="__main__":
     problem = options.problem
 
 # Parse the dirs
-problem = problem.replace('/', '.')
+problemClean = problem.replace('/', '.')
 problemPath = ''
 while problem.rfind('.') > 0:
     idx = problem.rfind('.') + 1
@@ -34,11 +33,11 @@ while problem.rfind('.') > 0:
     problem = problem[idx:]
 
 # Import proper problem file
-if problem.endswith('.py'): 
-    problem = problem[:-3]
+if problemClean.endswith('.py'): 
+    problemClean = problem[:-3]
 
 try:
-    params = __import__("problems." + problemPath + problem, fromlist=[problem])
+    params = __import__("problems." + problemPath + problemClean, fromlist=[problem])
 except ImportError:
     print ("Unable to import config file for '%s'." % problem)
     raise SystemExit
@@ -80,7 +79,13 @@ outinfo = { 'eigdat': params.eigspecdat,
             'overlapdat': params.overlapdat,
             'overlapplot': params.overlapplot,
             'outdir': params.outputdir,
-            'probout': params.probout }
+            'probout': params.probout,
+            'mingap': params.mingap,
+            'outdat': params.outdat }
+
+# Copy the input file to the output dir
+shutil.copyfile('problems/'+problem+'.py', 
+                outinfo['outdir']+'/'+problemClean+'.out')
 
 # Turn off all outputs (potentially)
 if (params.output == 0):
@@ -116,20 +121,36 @@ hz *= isingSigns['hz']
 hzz *= isingSigns['hzz']
 hx *= isingSigns['hx']
 
+# Output a string to file
+def RecordStr(string, fname):
+    with open(outinfo['outdir']+'/'+fname, "w") as file:
+        file.write(string)
+
+# Output (append) the minimum gap to file
+def RecordMingap(time, gap, fname, it):
+    filepath = outinfo['outdir'] + '/' + fname
+    # Kill ghost data files
+    if (it is None or it == 0) and os.path.isfile(filepath):
+        os.remove(filepath)
+    # Write to file
+    with open(filepath, "a") as file:
+        file.write(str(time)+'\t'+str(gap)+'\n')
+
 if outinfo['probout']:
     print ("Initial state:")
     print (Psi0)
 
 # Determine if we're doing multiple simulations over T
 if isinstance(T, collections.Iterable):
-    if (outinfo['fiddat'] | outinfo['fidplot']): fidelitydata = []
+    if (outinfo['fiddat'] or outinfo['fidplot']):
+        fidelitydata = []
 
     for i in range(0, len(T)): # Go through all the T's
-        Psi = solve.ExpPert(nQubits, hz, hzz, hx, Psi0, T[i], dt, \
-                             errchk, eps, outinfo)
-
+        Psi, mingap = solve.ExpPert(nQubits, hz, hzz, hx, Psi0, T[i], dt[i],
+                                    errchk, eps, outinfo)
         # Do fidelity stuff
-        if ( outinfo['fiddat'] | outinfo['fidplot'] ):
+        if outinfo['fiddat'] or outinfo['fidplot']:
+            # Yeah, yeah, I know this is bad practice, god
             from solve import output
 
             Hvals, Hvecs = sp.linalg.eigh(hz + hzz)
@@ -141,45 +162,67 @@ if isinstance(T, collections.Iterable):
             Hvecs = sp.transpose(Hvecs) # So we can grab them as vectors
 
             # Construct fidelity data
-            if (outinfo['fiddat'] | outinfo['fidplot']):
-                d = solve.output.ConstructFidelityData(Psi, Hvecs[0:outinfo['fidnumstates']], 
-                                                       T[i], outinfo['outdir'])
+            if (outinfo['fiddat'] or outinfo['fidplot']):
+                d = solve.output.ConstructFidelityData(Psi, 
+                                                       Hvecs[0:outinfo['fidnumstates']], 
+                                                       T[i], 
+                                                       outinfo['outdir'])
 
-                for i in range(0, outinfo['fidnumstates']):
-                    fidelitydata.append(d[i])
+                for j in range(0, outinfo['fidnumstates']):
+                    fidelitydata.append(d[j])
+        # Record the mingap and probabilities
+        if outinfo['outdat']:
+            # Record the minimum spectral gap
+            RecordMingap(T[i], mingap, 'mingap.dat', i)
+
+            # Get state labelings, sort them in descending order
+            bitstring = statelabels.GenerateLabels(nQubits)
+            bitstring, density = statelabels.SortStateProbabilities(nQubits, Psi, bitstring)
+            finalOutputStr = ''
+
+            for j in range(2**nQubits):
+                outstr = bitstring[j] + '\t' + '%.8E' % density[j]
+                finalOutputStr += outstr + '\n'
+            if outinfo['probout']:
+                # Print out the probabilities
+                print "\nProbability (T = "+str(T[i])+"):"
+                print finalOutputStr
+
+            RecordStr(finalOutputStr, 'probsT'+str(T[i])+'.dat')
 
     # Sort fidelity data
-    if (outinfo['fiddat'] | outinfo['fidplot']): 
-        fidelitydata, fidelitydataplot = solve.output.SortFidelity(outinfo['fidnumstates'], fidelitydata)
-
+    if (outinfo['fiddat'] or outinfo['fidplot']): 
+        fidelitydata, fidelitydataplot = solve.output.SortFidelity(outinfo['fidnumstates'], 
+                                                                   fidelitydata)
     # Write out fidelity data
-    if outinfo['fiddat']: solve.output.RecordFidelity(fidelitydata, outinfo['outdir'])
-
+    if outinfo['fiddat']: 
+        solve.output.RecordFidelity(fidelitydata, outinfo['outdir'])
     # Plot fidelity(T)
-    if outinfo['fidplot']: solve.output.PlotFidelity(fidelitydataplot, outinfo['outdir'],
-                                                     outinfo['fidnumstates'])
-
-    if outinfo['probout']:
-        # Get state labelings, sort them in descending order
-        bitstring = statelabels.GenerateLabels(nQubits)
-        bitstring, density = statelabels.SortStateProbabilities(nQubits, Psi, bitstring)
-
-        print ("\nProbability (T = "+str(list(T)[-1])+"):")
-        for i in range(2**nQubits):
-            outstr = bitstring[i] + '\t' + '%.8E' % density[i]
-            print (outstr)
-
+    if outinfo['fidplot']: 
+        solve.output.PlotFidelity(fidelitydataplot, outinfo['outdir'],
+                                  outinfo['fidnumstates'])
 else:
-    Psi = solve.ExpPert(nQubits, hz, hzz, hx, Psi0, T, dt, 
-                        errchk, eps, outinfo)
+    Psi, mingap = solve.ExpPert(nQubits, hz, hzz, hx, Psi0, T, dt, 
+                                errchk, eps, outinfo)
+    # Output the minimal spectral gap
+    if outinfo['mingap']:
+        print ("\nMinimum spectral gap: "+str(mingap))
+        if outinfo['outdat']:
+            RecordMingap(T, mingap, 'mingap.dat', None)
+
+    # Output the probabilities
     if outinfo['probout']:
         sp.set_printoptions(precision=16)
-
         # Get state labelings, sort them in descending order
         bitstring = statelabels.GenerateLabels(nQubits)
         bitstring, density = statelabels.SortStateProbabilities(nQubits, Psi, bitstring)
+        finalOutputStr = ''
 
-        print ("Probability (T = "+str(T)+"):")
+        print ("Probability (T = "+str(T)+"):\n")
         for i in range(2**nQubits):
             outstr = bitstring[i] + '\t' + '%.8E' % density[i]
-            print (outstr)
+            finalOutputStr += outstr + '\n'
+        print finalOutputStr
+
+        if outinfo['outdat']:
+            RecordStr(finalOutputStr, 'probsT'+str(T)+'.dat')
