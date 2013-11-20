@@ -8,6 +8,7 @@ Description: Runs everything.
 '''
 
 import os, shutil, optparse
+import json
 import collections
 import scipy as sp
 from scipy import linalg
@@ -21,8 +22,11 @@ if __name__=="__main__":
     parser = optparse.OptionParser("usage: %prog [options] arg1 arg2")
     parser.add_option("-p", "--problem", dest="problem", default="",
                       type="string", help="The problem that you want to run.")
+    parser.add_option("-r", "--relpath", dest="relpath", default="./",
+                      type="string", help="Relative path of run.py from current dir.")
     (options, args) = parser.parse_args()
     problem = options.problem
+    relpath = options.relpath
 
 # Parse the dirs
 problemClean = problem.replace('/', '.')
@@ -60,6 +64,16 @@ eps = params.eps
 isingConvert = params.isingConvert
 isingSigns = params.isingSigns
 
+# Output some params to a file
+try:
+    params.outputs
+except NameError:
+    pass
+else:
+    with open(pathpref + params.outputdir +
+              '/networkProperties.dat', 'w') as handle:
+        json.dump(params.outputs, handle)
+
 # Get user-specified coefficients
 if (isingConvert):
     alpha = beta = delta = gamma = 0
@@ -84,8 +98,8 @@ outinfo = { 'eigdat': params.eigspecdat,
             'outdat': params.outdat }
 
 # Copy the input file to the output dir
-shutil.copyfile('problems/'+problem+'.py', 
-                outinfo['outdir']+'/'+problemClean+'.out')
+shutil.copyfile(relpath+'/problems/'+problem+'.py', 
+                relpath+outinfo['outdir']+'/'+problemClean+'.out')
 
 # Turn off all outputs (potentially)
 if (params.output == 0):
@@ -122,19 +136,19 @@ hzz *= isingSigns['hzz']
 hx *= isingSigns['hx']
 
 # Output a string to file
-def RecordStr(string, fname):
-    with open(outinfo['outdir']+'/'+fname, "w") as file:
+def RecordStr(string, fname, rpath):
+    with open(rpath+outinfo['outdir']+'/'+fname, "w") as file:
         file.write(string)
 
 # Output (append) the minimum gap to file
-def RecordMingap(time, gap, fname, it):
-    filepath = outinfo['outdir'] + '/' + fname
+def RecordMingap(time, gap, fname, it, rpath):
+    filepath = rpath+outinfo['outdir'] + '/' + fname
     # Kill ghost data files
     if (it is None or it == 0) and os.path.isfile(filepath):
         os.remove(filepath)
     # Write to file
-    with open(filepath, "a") as file:
-        file.write(str(time)+'\t'+str(gap)+'\n')
+    with open(filepath, "w") as file:
+        file.write(str(gap))
 
 if outinfo['probout']:
     print ("Initial state:")
@@ -163,21 +177,23 @@ if isinstance(T, collections.Iterable):
 
             # Construct fidelity data
             if (outinfo['fiddat'] or outinfo['fidplot']):
-                d = solve.output.ConstructFidelityData(Psi, 
-                                                       Hvecs[0:outinfo['fidnumstates']], 
-                                                       T[i], 
-                                                       outinfo['outdir'])
+                d = solve.output.ConstructFidelityData(
+                                    Psi, 
+                                    Hvecs[0:outinfo['fidnumstates']], 
+                                    T[i], 
+                                    outinfo['outdir'])
 
                 for j in range(0, outinfo['fidnumstates']):
                     fidelitydata.append(d[j])
         # Record the mingap and probabilities
         if outinfo['outdat']:
             # Record the minimum spectral gap
-            RecordMingap(T[i], mingap, 'mingap.dat', i)
+            RecordMingap(T[i], mingap, 'mingap.dat', i, relpath)
 
             # Get state labelings, sort them in descending order
             bitstring = statelabels.GenerateLabels(nQubits)
-            bitstring, density = statelabels.SortStateProbabilities(nQubits, Psi, bitstring)
+            bitstring, density = statelabels.SortStateProbabilities(nQubits, Psi, 
+                                                                    bitstring)
             finalOutputStr = ''
 
             for j in range(2**nQubits):
@@ -188,7 +204,8 @@ if isinstance(T, collections.Iterable):
                 print "\nProbability (T = "+str(T[i])+"):"
                 print finalOutputStr
 
-            RecordStr(finalOutputStr, 'probsT'+str(T[i])+'.dat')
+            # Record the final output probabilities
+            RecordStr(finalOutputStr, 'probsT'+str(T[i])+'.dat', relpath)
 
     # Sort fidelity data
     if (outinfo['fiddat'] or outinfo['fidplot']): 
@@ -208,7 +225,7 @@ else:
     if outinfo['mingap']:
         print ("\nMinimum spectral gap: "+str(mingap))
         if outinfo['outdat']:
-            RecordMingap(T, mingap, 'mingap.dat', None)
+            RecordMingap(T, mingap, 'mingap.dat', None, relpath)
 
     # Output the probabilities
     if outinfo['probout']:
@@ -225,4 +242,4 @@ else:
         print finalOutputStr
 
         if outinfo['outdat']:
-            RecordStr(finalOutputStr, 'probsT'+str(T)+'.dat')
+            RecordStr(finalOutputStr, 'probsT'+str(T)+'.dat', relpath)

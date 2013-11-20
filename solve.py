@@ -61,7 +61,7 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
         Psi = A*Psi
 
         # Get eigendecomposition of true Hamiltonian if necessary
-        if (errchk or outinfo['mingap']
+        if (errchk or outinfo['mingap'] or outinfo['outdat']
             or outinfo['eigdat'] or outinfo['eigplot']
             or outinfo['fiddat'] or outinfo['fidplot']):
             Hvals, Hvecs = DiagHam(hz, hzz, hx, t, T, nQubits)
