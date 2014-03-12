@@ -124,6 +124,9 @@ hamMed = sp.median(hammingDistance)
 
 # Some outputs
 outputs = {
+    'nQubits': nQubits,
+    'learningRule': learningRule,
+    'outdir': probdir,
     'input': inputstate,
     'memories': memories,
     'hammingDistance': {'dist': hammingDistance,
