@@ -14,24 +14,31 @@ from scipy import linalg
 import output
 
 def DiagHam(hz, hzz, hx, t, T, n):
-    " Get exact eigen states/energies from H. "
+    """ 
+    Get exact eigen states/energies from H. 
+    """
 
     H = 1/T*(t*(hz + hzz) + (T - t)*hx)
 
     return sp.linalg.eigh(H)
 
 def CheckNorm(t, nQubits, Psi, Hvecs, eps):
-    " Check for numerical error with normalization. "
+    """ 
+    Check for numerical error with normalization. 
+    """
     norm = 0.0
 
     for i in range(0, 2**nQubits): 
         norm += abs(sp.vdot(Psi, Hvecs[i]))**2
 
     if ( (1.0 - norm) > eps ): 
-        print (str((1.0 - norm)) + " (norm error) > " + str(eps) + " (eps) @ t = " + str(t))
+        print (str((1.0 - norm)) + " (norm error) > " + str(eps) + 
+               " (eps) @ t = " + str(t))
 
 def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
-    " Solve using exponential perturbation theory (i.e. Magnus expansion). "
+    """ 
+    Solve using exponential perturbation theory (i.e. Magnus expansion).
+    """
 
     if outinfo['eigdat'] or outinfo['eigplot']:
         eigspec = []

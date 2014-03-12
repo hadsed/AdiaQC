@@ -14,14 +14,14 @@ from scipy import linalg
 def ConstructEigData(t, vals, n):
     " Construct proper datapoint for eigenspectrum. "
     datapoint = [t]
-    for i in range(0, n): datapoint.append(vals[i].real)
-
+    for i in range(0, n): 
+        datapoint.append(vals[i].real)
     return datapoint
 
 def RecordEigSpec(eigspec, outdir, T):
     " Output eigenspectrum to data file. "
     eigpath = os.path.dirname(os.path.realpath(__file__)) + "/" + \
-        outdir + "/eigenspectrum" + str(T) + ".dat"
+        outdir + "/eigenspectrum.dat"
     sp.savetxt(eigpath, eigspec)
 
 def PlotEigSpec(eigspec, outdir, T):
@@ -29,7 +29,7 @@ def PlotEigSpec(eigspec, outdir, T):
     import pylab as pl
 
     eigpath = os.path.dirname(os.path.realpath(__file__)) + "/" + \
-        outdir + "/eigenspectrum" + str(T) + ".png"
+        outdir + "/eigenspectrum.png"
 
     # Clear figure
     pl.clf()

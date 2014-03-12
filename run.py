@@ -171,8 +171,23 @@ if isinstance(T, collections.Iterable):
     # Keep the fidelity data somewhere
     if (outinfo['fiddat'] or outinfo['fidplot']):
         fidelitydata = []
+    ueigdat = outinfo['eigdat']
+    ueigplot = outinfo['eigplot']
     # Go through all the T's
     for i in range(0, len(T)): 
+        # If user wants eigenspectrum data/plots and is also doing multiple T's,
+        # make sure we output only one file since the spectrum is independent of T.
+        if ueigdat:
+            if i == (len(T) - 1):
+                outinfo['eigdat'] = 1
+            else:
+                outinfo['eigdat'] = 0
+        if ueigplot:
+            if i == (len(T) - 1):
+                outinfo['eigplot'] = 1
+            else:
+                outinfo['eigplot'] = 0
+        # Solve the Schrodinger equation, get back the final state and mingap
         Psi, mingap = solve.ExpPert(nQubits, hz, hzz, hx, Psi0, T[i], dt[i],
                                     errchk, eps, outinfo)
         # Do fidelity stuff

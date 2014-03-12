@@ -1,6 +1,8 @@
 data/
 *.pyc
 *.*~
+#*#
+
 
 # Compiled source #
 ###################
