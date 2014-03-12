@@ -2,7 +2,7 @@
 
 File: run.py
 Author: Hadayat Seddiqi
-Date: 3.15.13
+Date: 3.11.14
 Description: Runs everything.
 
 '''
@@ -21,12 +21,18 @@ import statelabels
 if __name__=="__main__":
     parser = optparse.OptionParser("usage: %prog [options] arg1 arg2")
     parser.add_option("-p", "--problem", dest="problem", default="",
-                      type="string", help="The problem that you want to run.")
+                      type="string", 
+                      help="The problem that you want to run.")
     parser.add_option("-r", "--relpath", dest="relpath", default="./",
-                      type="string", help="Relative path of run.py from current dir.")
+                      type="string", 
+                      help="Relative path of run.py from current dir.")
+    parser.add_option("-i", "--instance", dest="instance", default=None,
+                      type="int", 
+                      help="Instance number for large scale simulations.")
     (options, args) = parser.parse_args()
     problem = options.problem
     relpath = options.relpath
+    instance = options.instance
 
 # Parse the dirs
 problemClean = problem.replace('/', '.')
@@ -40,69 +46,75 @@ while problem.rfind('.') > 0:
 if problemClean.endswith('.py'): 
     problemClean = problem[:-3]
 
+# Now import it
 try:
-    params = __import__("problems." + problemPath + problemClean, fromlist=[problem])
+    fparams = __import__("problems."+problemPath+problemClean, fromlist=[problem])
 except ImportError:
     print ("Unable to import config file for '%s'." % problem)
     raise SystemExit
 
+# Get parameter dict from problem file
+cmdargs = {'problem': problem, 
+           'relpath': relpath, 
+           'instance': instance}
+params = fparams.parameters(cmdargs)
+
 # Create data directory
 pathpref =  os.path.dirname(os.path.realpath(__file__)) + "/"
-
 try:
-    os.makedirs(pathpref + params.outputdir)
+    os.makedirs(pathpref + params['outputdir'])
 except OSError:
-    if not os.path.isdir(pathpref + params.outputdir):
+    if not os.path.isdir(pathpref + params['outputdir']):
         raise
 
-# Get parameters from problem file
-nQubits = params.nQubits
-T = params.T
-dt = params.dt
-errchk = params.errchk
-eps = params.eps
-isingConvert = params.isingConvert
-isingSigns = params.isingSigns
+# Get the other variables from the problem file
+nQubits = params['nQubits']
+T = params['T']
+dt = params['dt']
+errchk = params['errchk']
+eps = params['eps']
+isingConvert = params['isingConvert']
+isingSigns = params['isingSigns']
 
 # Output some params to a file
 try:
-    params.outputs
+    params['outputs']
 except NameError:
     pass
 else:
-    with open(pathpref + params.outputdir +
+    with open(pathpref + params['outputdir'] +
               '/networkProperties.dat', 'w') as handle:
-        json.dump(params.outputs, handle)
+        json.dump(params['outputs'], handle)
 
 # Get user-specified coefficients
 if (isingConvert):
     alpha = beta = delta = gamma = 0
-    Q = params.Q
+    Q = params['Q']
 else:
-    alpha = params.alpha
-    beta = params.beta
-    delta = params.delta
+    alpha = params['alpha']
+    beta = params['beta']
+    delta = params['delta']
 
 # Construct output parameters dictionary
-outinfo = { 'eigdat': params.eigspecdat, 
-            'eigplot': params.eigspecplot, 
-            'eignum': params.eigspecnum, 
-            'fiddat': params.fideldat, 
-            'fidplot': params.fidelplot, 
-            'fidnumstates': params.fidelnumstates,
-            'overlapdat': params.overlapdat,
-            'overlapplot': params.overlapplot,
-            'outdir': params.outputdir,
-            'probout': params.probout,
-            'mingap': params.mingap,
-            'outdat': params.outdat }
+outinfo = { 'eigdat': params['eigdat'], 
+            'eigplot': params['eigplot'], 
+            'eignum': params['eignum'], 
+            'fiddat': params['fiddat'], 
+            'fidplot': params['fidplot'], 
+            'fidnumstates': params['fidnumstates'],
+            'overlapdat': params['overlapdat'],
+            'overlapplot': params['overlapplot'],
+            'outdir': params['outdir'],
+            'probout': params['probout'],
+            'mingap': params['mingap'],
+            'outdat': params['outdat'] }
 
 # Copy the input file to the output dir
 shutil.copyfile(relpath+'/problems/'+problem+'.py', 
                 relpath+outinfo['outdir']+'/'+problemClean+'.out')
 
 # Turn off all outputs (potentially)
-if (params.output == 0):
+if (params['outputs'] == 0):
     for param in outinfo: outinfo[param] = 0
 
 # Get our initial Hamiltonian coefficients
@@ -156,10 +168,11 @@ if outinfo['probout']:
 
 # Determine if we're doing multiple simulations over T
 if isinstance(T, collections.Iterable):
+    # Keep the fidelity data somewhere
     if (outinfo['fiddat'] or outinfo['fidplot']):
         fidelitydata = []
-
-    for i in range(0, len(T)): # Go through all the T's
+    # Go through all the T's
+    for i in range(0, len(T)): 
         Psi, mingap = solve.ExpPert(nQubits, hz, hzz, hx, Psi0, T[i], dt[i],
                                     errchk, eps, outinfo)
         # Do fidelity stuff
