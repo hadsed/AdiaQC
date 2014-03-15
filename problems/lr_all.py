@@ -26,7 +26,7 @@ def parameters(cmdargs):
     nQubits = 5
     # T = params.annealTime
     T = sp.arange(0.1, 15, 0.5)
-    # T = 10.0
+    T = 10.0
     dt = 0.01*T
     inputstate = [1,1,-1,-1,1]
 
