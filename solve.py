@@ -96,11 +96,11 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
             overlap.append(output.ConstructOverlapData(t, Psi, Hvecs[0]))
 
     if (outinfo['eigdat']): 
-        output.RecordEigSpec(eigspec, outinfo['outdir'], T)
+        output.RecordEigSpec(eigspec, outinfo['outdir'], outinfo['binary'])
     if (outinfo['eigplot']):
         output.PlotEigSpec(eigspec, outinfo['outdir'], T)
     if (outinfo['overlapdat']): 
-        output.RecordOverlap(overlap, outinfo['outdir'], T)
+        output.RecordOverlap(overlap, outinfo['outdir'], T, outinfo['binary'])
     if (outinfo['overlapplot']): 
         output.PlotOverlap(overlap, outinfo['outdir'], T)
 

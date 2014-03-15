@@ -16,6 +16,7 @@ from scipy import linalg
 import initialize
 import solve
 import statelabels
+from solve import output
 
 # Command line options
 if __name__=="__main__":
@@ -29,22 +30,26 @@ if __name__=="__main__":
     parser.add_option("-i", "--instance", dest="instance", default=None,
                       type="int", 
                       help="Instance number for large scale simulations.")
+    parser.add_option("-k", "--simtype", dest="simtype", default=None,
+                      type="string", 
+                      help="Further specification of problem type, if needed.")
     (options, args) = parser.parse_args()
     problem = options.problem
     relpath = options.relpath
     instance = options.instance
+    simtype = options.simtype
 
-# Parse the dirs
+# Clean up the problem path
 problemClean = problem.replace('/', '.')
 problemPath = ''
-while problem.rfind('.') > 0:
-    idx = problem.rfind('.') + 1
-    problemPath = problem[0:idx]
-    problem = problem[idx:]
 
-# Import proper problem file
+# Separate problem path and problem itself
 if problemClean.endswith('.py'): 
-    problemClean = problem[:-3]
+    problemClean = problemClean[:-3]
+while problemClean.rfind('.') > 0:
+    idx = problemClean.rfind('.') + 1
+    problemPath = problemClean[0:idx]
+    problemClean = problemClean[idx:]
 
 # Now import it
 try:
@@ -56,7 +61,8 @@ except ImportError:
 # Get parameter dict from problem file
 cmdargs = {'problem': problem, 
            'relpath': relpath, 
-           'instance': instance}
+           'instance': instance,
+           'simtype': simtype}
 params = fparams.parameters(cmdargs)
 
 # Create data directory
@@ -96,21 +102,24 @@ else:
     delta = params['delta']
 
 # Construct output parameters dictionary
-outinfo = { 'eigdat': params['eigdat'], 
-            'eigplot': params['eigplot'], 
-            'eignum': params['eignum'], 
-            'fiddat': params['fiddat'], 
-            'fidplot': params['fidplot'], 
-            'fidnumstates': params['fidnumstates'],
-            'overlapdat': params['overlapdat'],
-            'overlapplot': params['overlapplot'],
-            'outdir': params['outdir'],
-            'probout': params['probout'],
-            'mingap': params['mingap'],
-            'outdat': params['outdat'] }
+outinfo = { 
+    'eigdat': params['eigdat'], 
+    'eigplot': params['eigplot'], 
+    'eignum': params['eignum'], 
+    'fiddat': params['fiddat'], 
+    'fidplot': params['fidplot'], 
+    'fidnumstates': params['fidnumstates'],
+    'overlapdat': params['overlapdat'],
+    'overlapplot': params['overlapplot'],
+    'outdir': params['outdir'],
+    'probshow': params['probshow'],
+    'probout': params['probout'],
+    'mingap': params['mingap'],
+    'binary': params['binary']
+    }
 
 # Copy the input file to the output dir
-shutil.copyfile(relpath+'/problems/'+problem+'.py', 
+shutil.copyfile(relpath+'/problems/'+problemClean+'.py', 
                 relpath+outinfo['outdir']+'/'+problemClean+'.out')
 
 # Turn off all outputs (potentially)
@@ -147,22 +156,7 @@ hz *= isingSigns['hz']
 hzz *= isingSigns['hzz']
 hx *= isingSigns['hx']
 
-# Output a string to file
-def RecordStr(string, fname, rpath):
-    with open(rpath+outinfo['outdir']+'/'+fname, "w") as file:
-        file.write(string)
-
-# Output (append) the minimum gap to file
-def RecordMingap(time, gap, fname, it, rpath):
-    filepath = rpath+outinfo['outdir'] + '/' + fname
-    # Kill ghost data files
-    if (it is None or it == 0) and os.path.isfile(filepath):
-        os.remove(filepath)
-    # Write to file
-    with open(filepath, "w") as file:
-        file.write(str(gap))
-
-if outinfo['probout']:
+if outinfo['probshow']:
     print ("Initial state:")
     print (Psi0)
 
@@ -171,6 +165,7 @@ if isinstance(T, collections.Iterable):
     # Keep the fidelity data somewhere
     if (outinfo['fiddat'] or outinfo['fidplot']):
         fidelitydata = []
+    # Keep the user-specified values for eigspec stuff
     ueigdat = outinfo['eigdat']
     ueigplot = outinfo['eigplot']
     # Go through all the T's
@@ -192,17 +187,13 @@ if isinstance(T, collections.Iterable):
                                     errchk, eps, outinfo)
         # Do fidelity stuff
         if outinfo['fiddat'] or outinfo['fidplot']:
-            # Yeah, yeah, I know this is bad practice, god
-            from solve import output
-
+            # Get the eigenpairs
             Hvals, Hvecs = sp.linalg.eigh(hz + hzz)
-            
             # Sort by eigenvalues
             idx = Hvals.argsort()
             Hvals = Hvals[idx]
             Hvecs = Hvecs[:,idx]
             Hvecs = sp.transpose(Hvecs) # So we can grab them as vectors
-
             # Construct fidelity data
             if (outinfo['fiddat'] or outinfo['fidplot']):
                 d = solve.output.ConstructFidelityData(
@@ -213,35 +204,55 @@ if isinstance(T, collections.Iterable):
 
                 for j in range(0, outinfo['fidnumstates']):
                     fidelitydata.append(d[j])
-        # Record the mingap and probabilities
-        if outinfo['outdat']:
-            # Record the minimum spectral gap
-            RecordMingap(T[i], mingap, 'mingap.dat', i, relpath)
-
-            # Get state labelings, sort them in descending order
+        # Record the mingap
+        if outinfo['mingap']:
+            solve.output.RecordMingap(T[i], mingap, 'mingap.dat', i, 
+                                      relpath, outinfo)
+        # Record probabilities
+        if outinfo['probout']:
+            # Get state labelings and probabilities
             bitstring = statelabels.GenerateLabels(nQubits)
-            bitstring, density = statelabels.SortStateProbabilities(nQubits, Psi, 
-                                                                    bitstring)
-            finalOutputStr = ''
+            density = statelabels.GetProbabilities(nQubits, Psi)
 
-            for j in range(2**nQubits):
-                outstr = bitstring[j] + '\t' + '%.8E' % density[j]
-                finalOutputStr += outstr + '\n'
-            if outinfo['probout']:
+            # Record the final output probabilities
+            solve.output.RecordProbs(bitstring, density, 
+                                     'probsT'+str(T[i])+'.dat', 
+                                     relpath, outinfo)
+
+            # Check if the bitstrings were recorded, if not, record them
+            if not os.path.isfile(relpath+outinfo['outdir']+'/statelabels.txt'):
+                # Build a nice string for output to file
+                finalstr = ''
+                for j in range(2**nQubits):
+                    finalstr += bitstring[j] + '\n'
+                with open(relpath+outinfo['outdir']+'/statelabels.txt', 
+                          "w") as file:
+                    file.write(finalstr)
+
+            # Incase the user wants this printed to screen
+            if outinfo['probshow']:
+                finalOutputStr = ''
+                # Sort by probability
+                bitstring, density = statelabels.SortStates(nQubits, 
+                                                            Psi, 
+                                                            bitstring,
+                                                            density)
+                # Construct a nice-looking string
+                for j in range(2**nQubits):
+                    outstr = bitstring[j] + '\t' + '%.8E' % density[j]
+                    finalOutputStr += outstr + '\n'
                 # Print out the probabilities
                 print "\nProbability (T = "+str(T[i])+"):"
                 print finalOutputStr
 
-            # Record the final output probabilities
-            RecordStr(finalOutputStr, 'probsT'+str(T[i])+'.dat', relpath)
-
-    # Sort fidelity data
+    # Sort fidelity data (so the plots come out correctly)
     if (outinfo['fiddat'] or outinfo['fidplot']): 
-        fidelitydata, fidelitydataplot = solve.output.SortFidelity(outinfo['fidnumstates'], 
-                                                                   fidelitydata)
+        fidelitydata, fidelitydataplot = \
+            solve.output.SortFidelity(outinfo['fidnumstates'], fidelitydata)
     # Write out fidelity data
     if outinfo['fiddat']: 
-        solve.output.RecordFidelity(fidelitydata, outinfo['outdir'])
+        solve.output.RecordFidelity(fidelitydata, outinfo['outdir'], 
+                                    outinfo['binary'])
     # Plot fidelity(T)
     if outinfo['fidplot']: 
         solve.output.PlotFidelity(fidelitydataplot, outinfo['outdir'],
@@ -251,23 +262,37 @@ else:
                                 errchk, eps, outinfo)
     # Output the minimal spectral gap
     if outinfo['mingap']:
-        print ("\nMinimum spectral gap: "+str(mingap))
-        if outinfo['outdat']:
-            RecordMingap(T, mingap, 'mingap.dat', None, relpath)
-
+        solve.output.RecordMingap(T, mingap, 'mingap.dat', None, 
+                                  relpath, outinfo)
     # Output the probabilities
     if outinfo['probout']:
         sp.set_printoptions(precision=16)
         # Get state labelings, sort them in descending order
         bitstring = statelabels.GenerateLabels(nQubits)
-        bitstring, density = statelabels.SortStateProbabilities(nQubits, Psi, bitstring)
-        finalOutputStr = ''
+        # Get probability densities
+        density = statelabels.GetProbabilities(nQubits, Psi)
+        # Output to file
+        solve.output.RecordProbs(bitstring, density, 
+                                 'probsT'+str(T)+'.dat', 
+                                 relpath, outinfo)
+        # Check if the bitstrings were recorded, if not, record them
+        if not os.path.isfile(relpath+outinfo['outdir']+'/statelabels.txt'):
+            # Build a nice string for output to file
+            finalstr = ''
+            for j in range(2**nQubits):
+                finalstr += bitstring[j] + '\n'
+            with open(relpath+outinfo['outdir']+'/statelabels.txt', 
+                      "w") as file:
+                file.write(finalstr)
 
-        print ("Probability (T = "+str(T)+"):\n")
-        for i in range(2**nQubits):
-            outstr = bitstring[i] + '\t' + '%.8E' % density[i]
-            finalOutputStr += outstr + '\n'
-        print finalOutputStr
-
-        if outinfo['outdat']:
-            RecordStr(finalOutputStr, 'probsT'+str(T)+'.dat', relpath)
+        # Output probabilities to screen if user wants it
+        if outinfo['probshow']:
+            finalOutputStr = ''
+            bitstring, density = statelabels.SortStates(nQubits, 
+                                                        bitstring,
+                                                        density)
+            print ("Probability (T = "+str(T)+"):\n")
+            for i in range(2**nQubits):
+                outstr = bitstring[i] + '\t' + '%.8E' % density[i]
+                finalOutputStr += outstr + '\n'
+            print finalOutputStr
