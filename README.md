@@ -22,7 +22,7 @@ Please run the test problems. They are simple problems that you can verify by ha
 
 Problems are included in the problems/ directory. Currently working on Hopfield neural network, correlation clustering to come soon. Add your own problem by creating a new problem in the problems/ directory. At the end of any problem file is a list of what is required to be returned by that function. All of them need to be specified. Feel free to do anything you want inside that function (import packages, read from files, etc.) to help you get those parameters.
 
-If you are looking to do large numbers of instances, do look at what I did with the Hopfield network stuff. The relevant files are problems/lr_all.py and problems/lr_wrapper.py. The latter is the wrapper script which runs a specified instance of lr_all as its own process.
+If you are looking to do large numbers of instances, do look at what I did with the Hopfield network stuff. The relevant files are problems/hopfield_batch.py and problems/hopfield_wrapper.py. The latter is the wrapper script which runs a specified instance of hopfield_batch as its own process.
 
 You can also add a new solver by creating a new function in solver.py and calling it from run.py. If you do that, please submit a pull-request and contribute it!
 
