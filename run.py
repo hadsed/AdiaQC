@@ -89,7 +89,7 @@ except NameError:
     pass
 else:
     with open(pathpref + params['outputdir'] +
-              '/networkProperties.dat', 'w') as handle:
+              '/problem_outputs.dat', 'w') as handle:
         json.dump(params['outputs'], handle)
 
 # Get user-specified coefficients

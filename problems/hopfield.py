@@ -9,50 +9,95 @@ Description: Parameters for a Hopfield neural network.
 
 import scipy as sp
 
-nQubits = 4
-T = 10.0
-#T = sp.arange(2,23,4.0) # Output a sequence of anneal times
-dt = 0.01
+def parameters(cmdargs):
+    """
+    """
+    nQubits = 4
+    T = 10.0
+    #T = sp.arange(2,23,4.0) # Output a sequence of anneal times
+    dt = 0.01
 
-# Output parameters
-output = 1 # Turn on/off all output except final probabilities
-eigspecdat = 0 # Output data for eigspec
-eigspecplot = 1 # Plot eigspec
-eigspecnum = 2**nQubits # Number of eigenvalues
-fidelplot = 0 # Plot fidelity
-fideldat = 0 # Output fidelity data
-fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
-overlapdat = 0 # Output overlap data
-overlapplot = 1 # Plot overlap
-outputdir = 'data/hopfield/' # In relation to run.py
-probout = 1 # Calculate final state probabilities
-mingap = 1 # Output the minimum spectral gap
+    # Output parameters
+    output = 1 # Turn on/off all output except final probabilities
+    binary = 0 # Save output files as binary Numpy format
 
-errchk = 0 # Error-checking on/off
-eps = 0.01 # Numerical error in normalization condition (1 - norm < eps)
+    outputdir = 'data/hopfield/' # In relation to run.py
+    eigspecdat = 1 # Output data for eigspec
+    eigspecplot = 1 # Plot eigspec
+    eigspecnum = 2**nQubits # Number of eigenvalues to output
+    fidelplot = 1 # Plot fidelity
+    fideldat = 1 # Output fidelity data
+    fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
+    overlapdat = 1 # Output overlap data
+    overlapplot = 1 # Plot overlap
 
-# Specify a QUBO (convert to Ising = True), or alpha, beta directly 
-# (convert = False), and also specify the signs on the Ising Hamiltonian 
-# terms (you can specify coefficients too for some problems if needed)
-isingConvert = 0
-isingSigns = {'hx': -1, 'hz': -1, 'hzz': -1}
+    probshow = 1 # Print final state probabilities to screen
+    probout = 1 # Output probabilities to file
+    mingap = 1 # Record the minimum spectral gap
 
-neurons = nQubits
-memories = [ [1,1,1,1], [-1,1,-1,1], [1,-1,1,-1] ]
-inputstate = [1,1,0,0]
-# This is gamma, the appropriate weighting on the input vector
-isingSigns['hz'] *= 1 - (len(inputstate) - inputstate.count(0))/(2*neurons)
+    errchk = 0 # Error-checking on/off (for simulation accuracy)
+    eps = 0.01 # Numerical error in normalization condition (1 - norm < eps)
 
-alpha = sp.array(inputstate)
-beta = sp.zeros((neurons,neurons))
-delta = sp.array([])
+    # Specify a QUBO (convert to Ising = True), or alpha, beta directly 
+    # (convert = False), and also specify the signs on the Ising Hamiltonian 
+    # terms (you can specify coefficients too for some problems if needed)
+    isingConvert = 0
+    isingSigns = {'hx': -1, 'hz': -1, 'hzz': -1}
 
-# Construct pattern matrix
-for i in range(neurons):
-    for j in range(neurons):
-        for p in range(len(memories)):
-            beta[i,j] += ( memories[p][i]*memories[p][j] -
-                           len(memories)*(i == j) )
+    # Construct network Ising parameters
+    neurons = nQubits
+    memories = [ [1,1,1,1], [-1,1,-1,1], [1,-1,1,-1] ]
+    inputstate = [1,1,0,0]
 
-beta = sp.triu(beta)/float(neurons)
-print beta
+    # This is gamma, the appropriate weighting on the input vector
+    isingSigns['hz'] *= 1 - (len(inputstate) - inputstate.count(0))/(2*neurons)
+
+    alpha = sp.array(inputstate)
+    beta = sp.zeros((neurons,neurons))
+    delta = sp.array([])
+
+    # Construct pattern matrix according to the Hebb learning rule
+    for i in range(neurons):
+        for j in range(neurons):
+            for p in range(len(memories)):
+                beta[i,j] += ( memories[p][i]*memories[p][j] -
+                               len(memories)*(i == j) )
+
+    beta = sp.triu(beta)/float(neurons)
+
+    # Usually we specify outputs that may be of interest in the form of a dict, 
+    # but we don't need any for this problem
+    outputs = None
+
+    ############################################################################
+    ######## All variables must be specified here, do NOT change the keys ######
+    ############################################################################
+
+    return {
+        'nQubits': nQubits,
+        'Q': None,
+        'T': T,
+        'dt': dt,
+        'outputdir': outputdir,
+        'errchk': errchk,
+        'eps': eps,
+        'isingConvert': isingConvert,
+        'isingSigns': isingSigns,
+        'outputs': outputs,
+        'alpha': alpha,
+        'beta': beta,
+        'delta': delta,
+        'eigdat': eigspecdat,
+        'eigplot': eigspecplot,
+        'eignum': eigspecnum,
+        'fiddat': fideldat,
+        'fidplot': fidelplot,
+        'fidnumstates': fidelnumstates,
+        'overlapdat': overlapdat,
+        'overlapplot': overlapplot,
+        'outdir': outputdir,
+        'binary': binary,
+        'probshow': probshow,
+        'probout': probout,
+        'mingap': mingap,
+        }
