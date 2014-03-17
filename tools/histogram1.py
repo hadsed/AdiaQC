@@ -22,13 +22,20 @@ def getData(fpath, t, lrule):
         try:
             # Load final state probabilities
             probs = np.load(fpath+str(num)+'/probsT'+str(t)+'.dat.npy')
+            props = json.load(open(fpath+str(num)+'/problem_outputs.dat'))
+            bstrs = [ line.rstrip('\n') for line in open(fpath+str(num)+
+                                                         '/statelabels.txt') ]
         except Exception as e:
             print "Error in sim instance: " + str(num)
             print "Learning rule: " + str(lrule)
             print "\t", e
             continue
-        # Pick out the highest probability--this is almost surely the answer
-        data.append(np.amax(probs))
+
+        # Get the input state's probability
+        gstate = reduce(lambda x,y: x+y, 
+                        [ '1' if k == -1 else '0' for k in props['input'] ])
+        pidx = bstrs.index(gstate)
+        data.append(probs[pidx])
     return data
 
 # Command line options

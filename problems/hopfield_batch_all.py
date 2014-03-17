@@ -148,7 +148,7 @@ def parameters(cmdargs):
         'nQubits': nQubits,
         'learningRule': learningRule,
         'outdir': probdir,
-        'input': inputstate,
+        'inputState': inputstate,
         'memories': memories,
         'hammingDistance': {'dist': hammingDistance,
                             'mean': hamMean,

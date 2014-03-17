@@ -44,7 +44,8 @@ def parameters(cmdargs):
     overlapplot = 0 # Plot overlap
 
     # Output directory stuff
-    probdir = 'data/hopfield_random/n'+str(nQubits)+'p'+str(hparams['numMemories'])+hparams['learningRule']
+    probdir = 'data/hopfield_random/n'+str(nQubits)+'p'+ \
+        str(hparams['numMemories'])+hparams['learningRule']
     if isinstance(T, collections.Iterable):
         probdir += 'MultiT'
     if os.path.isdir(probdir):
@@ -138,7 +139,7 @@ def parameters(cmdargs):
         'nQubits': nQubits,
         'learningRule': hparams['learningRule'],
         'outdir': probdir,
-        'input': hparams['inputState'],
+        'inputState': hparams['inputState'],
         'memories': memories,
         'hammingDistance': {'dist': hammingDistance,
                             'mean': hamMean,
