@@ -5,6 +5,7 @@ data/
 .#*#
 *.dat
 *.npy
+*.out
 
 # Compiled source #
 ###################

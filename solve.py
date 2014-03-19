@@ -29,9 +29,9 @@ def CheckNorm(t, nQubits, Psi, Hvecs, eps):
     norm = 0.0
 
     for i in range(0, 2**nQubits): 
-        norm += abs(sp.vdot(Psi, Hvecs[i]))**2
+        norm += abs(sp.vdot(Psi, Hvecs[:,i]))**2
 
-    if ( (1.0 - norm) > eps ): 
+    if (1.0 - norm) > eps:
         print (str((1.0 - norm)) + " (norm error) > " + str(eps) + 
                " (eps) @ t = " + str(t))
 
@@ -64,11 +64,11 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
         Hexp = 1/(2*T)*((t**2 - t0**2)*(hz + hzz) + \
                         (2*T*(t - t0) + t0**2 - t**2)*hx)
 
-        A = linalg.expm(-1j*Hexp)
+        A = linalg.expm2(-1j*Hexp)
         Psi = A*Psi
 
         # Get eigendecomposition of true Hamiltonian if necessary
-        if (errchk or outinfo['mingap'] or outinfo['outdat']
+        if (errchk or outinfo['mingap']
             or outinfo['eigdat'] or outinfo['eigplot']
             or outinfo['fiddat'] or outinfo['fidplot']):
             Hvals, Hvecs = DiagHam(hz, hzz, hx, t, T, nQubits)
@@ -77,7 +77,6 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
             idx = Hvals.argsort()
             Hvals = Hvals[idx]
             Hvecs = Hvecs[:,idx]
-            Hvecs = sp.transpose(Hvecs) # So we can grab them as vectors
 
             if mingap is None:
                 mingap = sp.absolute(Hvals[1] - Hvals[0])
@@ -93,7 +92,7 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
             eigspec.append(output.ConstructEigData(t, Hvals, outinfo['eignum']))
 
         if (outinfo['overlapdat'] or outinfo['overlapplot']):
-            overlap.append(output.ConstructOverlapData(t, Psi, Hvecs[0]))
+            overlap.append(output.ConstructOverlapData(t, Psi, Hvecs[:,0]))
 
         # Output our progress, if specified
         if outinfo['progressout']:
