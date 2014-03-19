@@ -34,6 +34,8 @@ def parameters(cmdargs):
     # Output parameters
     output = 1 # Turn on/off all output except final probabilities
     binary = 1 # Save as binary Numpy
+    progressout = 0 # Output simulation progress over anneal timesteps
+
     eigspecdat = 1 # Output data for eigspec
     eigspecplot = 0 # Plot eigspec
     eigspecnum = 2**nQubits # Number of eigenvalues
@@ -175,6 +177,7 @@ def parameters(cmdargs):
         'overlapplot': overlapplot,
         'outdir': outputdir,
         'binary': binary,
+        'progressout': progressout,
         'probshow': probshow,
         'probout': probout,
         'mingap': mingap,

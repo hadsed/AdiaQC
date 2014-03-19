@@ -175,3 +175,12 @@ def RecordMingap(time, gap, fname, it, rpath, outinfo):
     # Write to file
     with open(filepath, "w") as file:
         file.write(str(gap))
+
+def ProgressOutput(t, T, dpath):
+    """
+    Output progress in the inner loop (over the annealing time)
+    of a solver method.
+    """
+    with open(dpath+"/progress_output.txt", "a") as outfile:
+        outfile.write("Completed t: " + str(t) + 
+                      " out of T: " + str(T) + "\n")

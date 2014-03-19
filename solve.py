@@ -95,6 +95,11 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
         if (outinfo['overlapdat'] or outinfo['overlapplot']):
             overlap.append(output.ConstructOverlapData(t, Psi, Hvecs[0]))
 
+        # Output our progress, if specified
+        if outinfo['progressout']:
+            output.ProgressOutput(t, T, outinfo['outdir'])
+
+    # Output stuff as needed
     if (outinfo['eigdat']): 
         output.RecordEigSpec(eigspec, outinfo['outdir'], outinfo['binary'])
     if (outinfo['eigplot']):

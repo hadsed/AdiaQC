@@ -20,6 +20,7 @@ def parameters(cmdargs):
     # Output parameters
     output = 1 # Turn on/off all output except final probabilities
     binary = 0 # Save output files as binary Numpy format
+    progressout = 0 # Output simulation progress over anneal timesteps
 
     outputdir = 'data/hopfield/' # In relation to run.py
     eigspecdat = 1 # Output data for eigspec
@@ -97,6 +98,7 @@ def parameters(cmdargs):
         'overlapplot': overlapplot,
         'outdir': outputdir,
         'binary': binary,
+        'progressout': progressout,
         'probshow': probshow,
         'probout': probout,
         'mingap': mingap,

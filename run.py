@@ -115,7 +115,8 @@ outinfo = {
     'probshow': params['probshow'],
     'probout': params['probout'],
     'mingap': params['mingap'],
-    'binary': params['binary']
+    'binary': params['binary'],
+    'progressout': params['progressout']
     }
 
 # Copy the input file to the output dir
