@@ -53,7 +53,8 @@ while problemClean.rfind('.') > 0:
 
 # Now import it
 try:
-    fparams = __import__("problems."+problemPath+problemClean, fromlist=[problem])
+    fparams = __import__("problems."+problemPath+problemClean, 
+                         fromlist=[problem])
 except ImportError:
     print ("Unable to import config file for '%s'." % problem)
     raise SystemExit
@@ -92,15 +93,6 @@ else:
               '/problem_outputs.dat', 'w') as handle:
         json.dump(params['outputs'], handle)
 
-# Get user-specified coefficients
-if (isingConvert):
-    alpha = beta = delta = gamma = 0
-    Q = params['Q']
-else:
-    alpha = params['alpha']
-    beta = params['beta']
-    delta = params['delta']
-
 # Construct output parameters dictionary
 outinfo = { 
     'eigdat': params['eigdat'], 
@@ -125,28 +117,58 @@ shutil.copyfile(relpath+'/problems/'+problemClean+'.py',
 
 # Turn off all outputs (potentially)
 if (params['outputs'] == 0):
-    for param in outinfo: outinfo[param] = 0
+    # Whitelist
+    keys = outinfo.keys()
+    del keys[keys == 'binary']
+    del keys[keys == 'outdir']
+    # Set everything else to false/zero
+    for param in keys: 
+        outinfo[param] = 0
 
 # Get our initial Hamiltonian coefficients
 if (isingConvert):
     # Get Ising coefficients
-    h, J, g = initialize.QUBO2Ising(Q)
+    h, J, g = initialize.QUBO2Ising(params['Q'])
+    # Construct operators
     hz, hzz, hx = initialize.IsingHamiltonian(nQubits, h, J, g)
-elif (alpha.size == 0 & beta.size == 0 & delta.size == 0):
+    # Free memory
+    del h, J, g, params['Q']
+elif (params['alpha'].size == 0 and
+      params['beta'].size == 0 and
+      params['delta'].size == 0):
     # Get default generated coefficients
-    hz, hzz, hx = initialize.HamiltonianGen(nQubits, alpha, beta, delta)
+    hz, hzz, hx = initialize.HamiltonianGen(nQubits, 
+                                            params['alpha'], 
+                                            params['beta'], 
+                                            params['delta'])
 else:
+    alpha = beta = delta = 0
     # Check if we need to generate individually
-    if (alpha.size == 0): alpha = sp.ones(nQubits)
-    if (beta.size == 0): beta = sp.ones((nQubits, nQubits))
-    if (delta.size == 0): delta = sp.ones(nQubits)
-    if (alpha.size & beta.size == 1): 
+    if (params['alpha'].size == 0): 
+        alpha = sp.ones(nQubits)
+    else:
+        alpha = params['alpha']
+    if (params['beta'].size == 0):
+        beta = sp.ones((nQubits, nQubits))
+    else:
+        beta = params['beta']
+    if (params['delta'].size == 0):
+        delta = sp.ones(nQubits)
+    else:
+        delta = params['delta']
+    if (params['alpha'].size == 1 and params['beta'].size == 1):
         hz, hzz = initialize.AlphaBetaCoeffs(nQubits, alpha, beta)
         hx = initialize.DeltaCoeffs(nQubits, delta)
+        # Free up some memory
+        del params['alpha'], params['beta'], params['delta']
+        del alpha, beta, delta
     else:
         hz = initialize.AlphaCoeffs(nQubits, alpha)
         hzz = initialize.BetaCoeffs(nQubits, beta)
         hx = initialize.DeltaCoeffs(nQubits, delta)
+        # Free up some memory
+        del params['alpha'], params['beta'], params['delta']
+        del alpha, beta, delta
 
 # Initial state
 Psi0 = initialize.InitialState(-hx)
@@ -261,6 +283,9 @@ if isinstance(T, collections.Iterable):
 else:
     Psi, mingap = solve.ExpPert(nQubits, hz, hzz, hx, Psi0, T, dt, 
                                 errchk, eps, outinfo)
+    # Psi, mingap = solve.edsolver(nQubits, hz, hzz, hx, Psi0, T, dt, 
+    #                              errchk, eps, outinfo)
+
     # Output the minimal spectral gap
     if outinfo['mingap']:
         solve.output.RecordMingap(T, mingap, 'mingap.dat', None, 

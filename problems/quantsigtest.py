@@ -26,7 +26,7 @@ def parameters(cmdargs):
     binary = 0 # Save output files as binary Numpy format
     progressout = 0 # Output simulation progress over anneal timesteps
 
-    outputdir = 'data/quantsigtest/' # In relation to run.py
+    outputdir = 'data/quantsigtest_new/' # In relation to run.py
     eigspecdat = 1 # Output data for eigspec
     eigspecplot = 1 # Plot eigspec
     eigspecnum = 2**nQubits # Number of eigenvalues to output

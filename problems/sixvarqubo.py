@@ -24,19 +24,21 @@ def parameters(cmdargs):
     binary = 0 # Save output files as binary Numpy format
     progressout = 0 # Output simulation progress over anneal timesteps
 
-    outputdir = 'data/sixvarqubo/' # In relation to run.py
-    eigspecdat = 1 # Output data for eigspec
-    eigspecplot = 1 # Plot eigspec
+    outputdir = 'data/sixvarqubo_new/' # In relation to run.py
+    eigspecdat = 0 # Output data for eigspec
+    eigspecplot = 0 # Plot eigspec
     eigspecnum = 2**nQubits # Number of eigenvalues to output
-    fidelplot = 1 # Plot fidelity
-    fideldat = 1 # Output fidelity data
+    fidelplot = 0 # Plot fidelity
+    fideldat = 0 # Output fidelity data
     fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
-    overlapdat = 1 # Output overlap data
-    overlapplot = 1 # Plot overlap
+    overlapdat = 0 # Output overlap data
+    overlapplot = 0 # Plot overlap
 
     probshow = 1 # Print final state probabilities to screen
+#### BUG ##### probshow requires probout
     probout = 1 # Output probabilities to file
-    mingap = 1 # Record the minimum spectral gap
+
+    mingap = 0 # Record the minimum spectral gap
 
     errchk = 0 # Error-checking on/off (for simulation accuracy)
     eps = 0.01 # Numerical error in normalization condition (1 - norm < eps)
