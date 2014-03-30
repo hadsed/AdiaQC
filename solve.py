@@ -10,7 +10,7 @@ Description: Simulate quantum annealing with some technique.
 import os
 import scipy as sp
 import numpy as np
-from scipy import linalg
+from scipy.sparse import linalg as sla
 
 import output
 
@@ -36,15 +36,6 @@ def CheckNorm(t, nQubits, Psi, Hvecs, eps):
         print (str((1.0 - norm)) + " (norm error) > " + str(eps) + 
                " (eps) @ t = " + str(t))
 
-def expmh(A):
-    """
-    Matrix exponential via eigendecomposition for Hermitian matrices.
-    """
-    s,vr = np.linalg.eigh(A)
-    vri = vr.conjugate().T
-    r = np.dot(np.dot(vr,np.diag(np.exp(-1j*s))),vri)
-    return r
-
 def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
     """ 
     Solve using exponential perturbation theory (i.e. Magnus expansion).
@@ -66,13 +57,9 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
         # Approximate Hamiltonian to first term in Magnus expansion
         cz = (t**2 - t0**2)/(2*T)
         cx = (2*T*(t - t0) + t0**2 - t**2)/(2*T)
-        Hexp = cx*hx
-        Hexp[np.diag_indices(2**nQubits)] = cz*(hz + hzz).diagonal()
-        # A = sp.sparse.linalg.expm(-1j*Hexp)
+        Psi = sla.expm_multiply(-1j*(cx*hx + cz*(hz + hzz)), Psi)
+        # A = sla.expm(-1j*(cx*hx + cz*(hz + hzz)))
         # Psi = A*Psi
-        # A = sp.linalg.expm(-1j*Hexp)
-        # A = expmh(Hexp)  # hermitian eigendecomposition method
-        Psi = sp.sparse.linalg.expm_multiply(-1j*Hexp, Psi)
 
         # Get eigendecomposition of true Hamiltonian if necessary
         if (errchk or outinfo['mingap']
