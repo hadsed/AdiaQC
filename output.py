@@ -16,7 +16,9 @@ def ConstructEigData(t, vals, n):
     Construct proper datapoint for eigenspectrum. 
     """
     datapoint = [t]
-    for i in range(0, n): 
+    if n > vals.size:
+        n = vals.size
+    for i in range(n):
         datapoint.append(vals[i].real)
     return datapoint
 

@@ -14,15 +14,6 @@ from scipy.sparse import linalg as sla
 
 import output
 
-def DiagHam(hz, hzz, hx, t, T, n):
-    """ 
-    Get exact eigen states/energies from H. 
-    """
-
-    H = 1/T*(t*(hz + hzz) + (T - t)*hx)
-
-    return sp.linalg.eigh(H)
-
 def CheckNorm(t, nQubits, Psi, Hvecs, eps):
     """ 
     Check for numerical error with normalization. 
@@ -65,8 +56,10 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
         if (errchk or outinfo['mingap']
             or outinfo['eigdat'] or outinfo['eigplot']
             or outinfo['fiddat'] or outinfo['fidplot']):
-            Hvals, Hvecs = DiagHam(hz, hzz, hx, t, T, nQubits)
-
+            # Unfortunately we cannot compute all eigenpairs
+            Hvals, Hvecs = sla.eigsh(cx*hx + cz*(hz + hzz), 
+                                     k=2**nQubits-1,
+                                     which='SM')
             # Sort by eigenvalues
             idx = Hvals.argsort()
             Hvals = Hvals[idx]
@@ -104,22 +97,22 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
 
     return Psi, mingap
 
-def edsolver(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
-    """ 
-    Solve using edsolver.m.
-    """
+# def edsolver(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
+#     """ 
+#     Solve using edsolver.m.
+#     """
 
-    from oct2py import octave
-    N = sp.floor(T/dt+1)
-    probs, eigk, Psi = octave.call('edsolver/solve1b.m', 
-                                   float(nQubits), hz, hzz, 
-                                   float(N), 1., dt, float(2**nQubits-2))
+#     from oct2py import octave
+#     N = sp.floor(T/dt+1)
+#     probs, eigk, Psi = octave.call('edsolver/solve1b.m', 
+#                                    float(nQubits), hz, hzz, 
+#                                    float(N), 1., dt, float(2**nQubits-2))
 
-    dgap = eigk[1,:] - eigk[0,:]
-    mingap = [ np.min(dgap), np.argmin(dgap)/float(dgap.size) ]
+#     dgap = eigk[1,:] - eigk[0,:]
+#     mingap = [ np.min(dgap), np.argmin(dgap)/float(dgap.size) ]
 
-    times = np.atleast_2d(np.arange(0,N+1))
-    eigspec = np.hstack((times.T, eigk.T))
-    output.PlotEigSpec(eigspec, outinfo['outdir'], T)
+#     times = np.atleast_2d(np.arange(0,N+1))
+#     eigspec = np.hstack((times.T, eigk.T))
+#     output.PlotEigSpec(eigspec, outinfo['outdir'], T)
 
-    return Psi, mingap
+#     return Psi, mingap

@@ -23,9 +23,8 @@ def parameters(cmdargs):
     dt = 0.01*T
 
     # Output parameters
-    output = 1 # Turn on/off all output except final probabilities
     binary = 1 # Save as binary Numpy
-    progressout = 1 # Output simulation progress over anneal timesteps
+    progressout = 0 # Output simulation progress over anneal timesteps
 
     eigspecdat = 0 # Output data for eigspec
     eigspecplot = 0 # Plot eigspec

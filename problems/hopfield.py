@@ -23,7 +23,7 @@ def parameters(cmdargs):
 
     outputdir = 'data/hopfield/' # In relation to run.py
     eigspecdat = 0 # Output data for eigspec
-    eigspecplot = 0 # Plot eigspec
+    eigspecplot = 1 # Plot eigspec
     eigspecnum = 2**nQubits # Number of eigenvalues to output
     fidelplot = 0 # Plot fidelity
     fideldat = 0 # Output fidelity data

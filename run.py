@@ -160,10 +160,6 @@ else:
         del params['alpha'], params['beta'], params['delta']
         del alpha, beta, delta
 
-hz = sps.csr_matrix(hz)
-hzz = sps.csr_matrix(hzz)
-hx = sps.csr_matrix(hx)
-
 # Initial state
 Psi0 = initialize.InitialState(-hx)
 Psi = sp.empty(2**nQubits)
