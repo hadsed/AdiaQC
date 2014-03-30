@@ -9,6 +9,7 @@ Description: Simulate quantum annealing with some technique.
 
 import os
 import scipy as sp
+import numpy as np
 from scipy import linalg
 
 import output
@@ -35,6 +36,15 @@ def CheckNorm(t, nQubits, Psi, Hvecs, eps):
         print (str((1.0 - norm)) + " (norm error) > " + str(eps) + 
                " (eps) @ t = " + str(t))
 
+def expmh(A):
+    """
+    Matrix exponential via eigendecomposition for Hermitian matrices.
+    """
+    s,vr = np.linalg.eigh(A)
+    vri = vr.conjugate().T
+    r = np.dot(np.dot(vr,np.diag(np.exp(-1j*s))),vri)
+    return r
+
 def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
     """ 
     Solve using exponential perturbation theory (i.e. Magnus expansion).
@@ -53,19 +63,16 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
         t = i*dt
         t0 = (i-1)*dt
 
-        # Approximate Hamiltonian to first term in Magnus expansion (OPTIMIZE)
-
-        # The sign on alpha is flipped so that the output probabilities are
-        # interpreted as 1 being up and 0 being down, which is more intuitive.
-#        Hexp = -1/(2*T)*((t**2 - t0**2)*(alpha - beta) + \
-#                        (2*T*(t - t0) + t0**2 - t**2)*delta)
-
-        # This Hamiltonian should have user-specified signs already
-        Hexp = 1/(2*T)*((t**2 - t0**2)*(hz + hzz) + \
-                        (2*T*(t - t0) + t0**2 - t**2)*hx)
-
-        A = linalg.expm2(-1j*Hexp)
-        Psi = A*Psi
+        # Approximate Hamiltonian to first term in Magnus expansion
+        cz = (t**2 - t0**2)/(2*T)
+        cx = (2*T*(t - t0) + t0**2 - t**2)/(2*T)
+        Hexp = cx*hx
+        Hexp[np.diag_indices(2**nQubits)] = cz*(hz + hzz).diagonal()
+        # A = sp.sparse.linalg.expm(-1j*Hexp)
+        # Psi = A*Psi
+        # A = sp.linalg.expm(-1j*Hexp)
+        # A = expmh(Hexp)  # hermitian eigendecomposition method
+        Psi = sp.sparse.linalg.expm_multiply(-1j*Hexp, Psi)
 
         # Get eigendecomposition of true Hamiltonian if necessary
         if (errchk or outinfo['mingap']
@@ -79,9 +86,9 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
             Hvecs = Hvecs[:,idx]
 
             if mingap is None:
-                mingap = sp.absolute(Hvals[1] - Hvals[0])
-            elif mingap > sp.absolute(Hvals[1] - Hvals[0]):
-                mingap = sp.absolute(Hvals[1] - Hvals[0])
+                mingap = [sp.absolute(Hvals[1] - Hvals[0]), t/T]
+            elif mingap[0] > sp.absolute(Hvals[1] - Hvals[0]):
+                mingap = [sp.absolute(Hvals[1] - Hvals[0]), t/T]
 
         # Check for numerical error
         if (errchk):
@@ -107,5 +114,25 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
         output.RecordOverlap(overlap, outinfo['outdir'], T, outinfo['binary'])
     if (outinfo['overlapplot']): 
         output.PlotOverlap(overlap, outinfo['outdir'], T)
+
+    return Psi, mingap
+
+def edsolver(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
+    """ 
+    Solve using edsolver.m.
+    """
+
+    from oct2py import octave
+    N = sp.floor(T/dt+1)
+    probs, eigk, Psi = octave.call('edsolver/solve1b.m', 
+                                   float(nQubits), hz, hzz, 
+                                   float(N), 1., dt, float(2**nQubits-2))
+
+    dgap = eigk[1,:] - eigk[0,:]
+    mingap = [ np.min(dgap), np.argmin(dgap)/float(dgap.size) ]
+
+    times = np.atleast_2d(np.arange(0,N+1))
+    eigspec = np.hstack((times.T, eigk.T))
+    output.PlotEigSpec(eigspec, outinfo['outdir'], T)
 
     return Psi, mingap

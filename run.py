@@ -11,7 +11,8 @@ import os, shutil, optparse
 import json
 import collections
 import scipy as sp
-from scipy import linalg
+from scipy import linalg as sla
+from scipy import sparse as sps
 
 import initialize
 import solve
@@ -115,16 +116,6 @@ outinfo = {
 shutil.copyfile(relpath+'/problems/'+problemClean+'.py', 
                 relpath+outinfo['outdir']+'/'+problemClean+'.out')
 
-# Turn off all outputs (potentially)
-if (params['outputs'] == 0):
-    # Whitelist
-    keys = outinfo.keys()
-    del keys[keys == 'binary']
-    del keys[keys == 'outdir']
-    # Set everything else to false/zero
-    for param in keys: 
-        outinfo[param] = 0
-
 # Get our initial Hamiltonian coefficients
 if (isingConvert):
     # Get Ising coefficients
@@ -166,9 +157,12 @@ else:
         hz = initialize.AlphaCoeffs(nQubits, alpha)
         hzz = initialize.BetaCoeffs(nQubits, beta)
         hx = initialize.DeltaCoeffs(nQubits, delta)
-        # Free up some memory
         del params['alpha'], params['beta'], params['delta']
         del alpha, beta, delta
+
+hz = sps.csr_matrix(hz)
+hzz = sps.csr_matrix(hzz)
+hx = sps.csr_matrix(hx)
 
 # Initial state
 Psi0 = initialize.InitialState(-hx)
@@ -194,7 +188,7 @@ if isinstance(T, collections.Iterable):
     # Go through all the T's
     for i in range(0, len(T)): 
         # If user wants eigenspectrum data/plots and is also doing multiple T's,
-        # make sure we output only one file since the spectrum is independent of T.
+        # make sure we output only one file since spectrum is independent of T.
         if ueigdat:
             if i == (len(T) - 1):
                 outinfo['eigdat'] = 1

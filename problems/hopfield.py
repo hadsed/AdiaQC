@@ -18,23 +18,22 @@ def parameters(cmdargs):
     dt = 0.01
 
     # Output parameters
-    output = 1 # Turn on/off all output except final probabilities
     binary = 0 # Save output files as binary Numpy format
     progressout = 0 # Output simulation progress over anneal timesteps
 
     outputdir = 'data/hopfield/' # In relation to run.py
-    eigspecdat = 1 # Output data for eigspec
-    eigspecplot = 1 # Plot eigspec
+    eigspecdat = 0 # Output data for eigspec
+    eigspecplot = 0 # Plot eigspec
     eigspecnum = 2**nQubits # Number of eigenvalues to output
-    fidelplot = 1 # Plot fidelity
-    fideldat = 1 # Output fidelity data
+    fidelplot = 0 # Plot fidelity
+    fideldat = 0 # Output fidelity data
     fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
-    overlapdat = 1 # Output overlap data
-    overlapplot = 1 # Plot overlap
+    overlapdat = 0 # Output overlap data
+    overlapplot = 0 # Plot overlap
 
     probshow = 1 # Print final state probabilities to screen
     probout = 1 # Output probabilities to file
-    mingap = 1 # Record the minimum spectral gap
+    mingap = 0 # Record the minimum spectral gap
 
     errchk = 0 # Error-checking on/off (for simulation accuracy)
     eps = 0.01 # Numerical error in normalization condition (1 - norm < eps)
@@ -48,7 +47,7 @@ def parameters(cmdargs):
     # Construct network Ising parameters
     neurons = nQubits
     memories = [ [1,1,1,1], [-1,1,-1,1], [1,-1,1,-1] ]
-    inputstate = [1,1,0,0]
+    inputstate = [1,1,1,1]
 
     # This is gamma, the appropriate weighting on the input vector
     isingSigns['hz'] *= 1 - (len(inputstate) - inputstate.count(0))/(2*neurons)
@@ -65,6 +64,11 @@ def parameters(cmdargs):
                                len(memories)*(i == j) )
 
     beta = sp.triu(beta)/float(neurons)
+
+    # Test message
+    print("\nThe best answer should be |0000>, where zero means \n"
+          "spin-up (equivalent to one in spin-variables--one in \n"
+          "binary means negative one in spin-variables).\n")
 
     # Usually we specify outputs that may be of interest in the form of a dict, 
     # but we don't need any for this problem

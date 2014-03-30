@@ -20,8 +20,7 @@ def parameters(cmdargs):
     dt = 0.1
 
     # Output parameters
-    output = 1 # Turn on/off all output except final probabilities
-    binary = 0 # Save output files as binary Numpy format
+    binary = 1 # Save output files as binary Numpy format
     progressout = 0 # Output simulation progress over anneal timesteps
 
     outputdir = 'data/sixvarqubo_new/' # In relation to run.py
@@ -50,8 +49,8 @@ def parameters(cmdargs):
     isingSigns = {'hx': 1, 'hz': 1, 'hzz': -1}
 
     # Define the QUBO and its diagonal
-    Q = sp.empty((nQubits,nQubits))
-    a = sp.empty(nQubits)
+    Q = sp.zeros((nQubits,nQubits))
+    a = sp.zeros(nQubits)
 
     a[0] = 2
     a[1] = 1
