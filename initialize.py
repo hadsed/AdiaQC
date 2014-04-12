@@ -77,8 +77,10 @@ def _formZiZj(nq, i, j, z):
         elif i == (nq-1):
             return sps.kron(sps.eye(2**(nq-1)), z*z)
         else:
-            k1 = i - 1
-            k2 = nq - i
+            # k1 = i - 1
+            # k2 = nq - i
+            k1 = i
+            k2 = nq - i - 1
             return sps.kron(sps.eye(2**k1), 
                             sps.kron(z*z, sps.eye(2**k2)))
     # Construct first part
@@ -150,10 +152,8 @@ def HamiltonianGen(n, a, b, d):
     # Form alpha and beta operators
     for q1 in xrange(n):
         alpha = alpha + a[q1]*_formZi(n,q1,Z)
-        for q2 in xrange(n):
+        for q2 in xrange(q1+1,n):
             beta = beta + b[q1,q2]*_formZiZj(n,q1,q2,Z)
-    # Add energy shift
-    beta.setdiag(beta.diagonal() + g)
     # Form delta operator
     delta = _formX(n, X, I)
     return alpha, beta, delta
@@ -280,7 +280,7 @@ def HamiltonianGen_old(n, a, b, d):
     temp = 0
     # Calculate beta
     for i in range(0,n):
-        for j in range(0,n):
+        for j in range(i+1,n):
             if (i != j):
                 for m in range(0,n-2): matrices.append(I)
                 matrices.insert(i, Z)
