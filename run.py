@@ -154,9 +154,7 @@ else:
         del params['alpha'], params['beta'], params['delta']
         del alpha, beta, delta
     else:
-        hz = initialize.AlphaCoeffs(nQubits, alpha)
-        hzz = initialize.BetaCoeffs(nQubits, beta)
-        hx = initialize.DeltaCoeffs(nQubits, delta)
+        hz, hzz, hx = initialize.HamiltonianGen(nQubits, alpha, beta, delta)
         del params['alpha'], params['beta'], params['delta']
         del alpha, beta, delta
 
