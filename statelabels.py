@@ -27,7 +27,6 @@ def kbits(n, k):
 
 def GenerateLabels(n):
     " Get proper labeling for output states. "
-
     # Generate bitstrings
     bitstring = []
     for i in range(0,n+1): 
@@ -59,14 +58,16 @@ def GenerateLabels(n):
 
     return bitstring
 
+
 def GetProbabilities(n, Psi):
     """
     Get probabilites by doing mod-squared of @Psi.
     """
     density = sp.zeros(2**n)
     for i in range(2**n): 
-        density[i] = sp.vdot(Psi[i],Psi[i]).real
+        density[i] = sp.vdot(Psi[i], Psi[i]).real
     return density
+
 
 def SortStates(n, bitstring, density):
     """ 

@@ -49,6 +49,7 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
         cz = (t**2 - t0**2)/(2*T)
         cx = (2*T*(t - t0) + t0**2 - t**2)/(2*T)
         Psi = sla.expm_multiply(-1j*(cx*hx + cz*(hz + hzz)), Psi)
+        # This is a HUGE performance loss -- requires sparse to dense
         # A = sla.expm(-1j*(cx*hx + cz*(hz + hzz)))
         # Psi = A*Psi
 
