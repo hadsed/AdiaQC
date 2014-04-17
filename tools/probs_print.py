@@ -17,9 +17,16 @@ if __name__=="__main__":
     parser.add_option("-s", "--sort", dest="sort", default=0,
                       type="int", 
                       help="Sort by probabilities.")
+    parser.add_option("-p", "--print", dest="print", default=1,
+                      type="int", 
+                      help="Print to screen.")
+    parser.add_option("-o", "--output", dest="output", default=0,
+                      type="int", 
+                      help="Output to file.")
     (options, args) = parser.parse_args()
     filename = options.filename
     sort = options.sort
+    output = options.output
 
 # Get data
 probs = np.load(filename)
@@ -31,5 +38,12 @@ if sort:
     zipped = sorted(zipped, key=lambda x: x[1])[::-1]
 
 # Print
-for pair in zipped:
-    print pair
+if print:
+    for pair in zipped:
+        print pair
+
+# Output
+if output:
+    with open('probsout.txt', 'w') as f:
+        for pair in zipped:
+            f.write(pair[0]+'\t %.12E' % pair[1] + '\n')
