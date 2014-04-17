@@ -52,8 +52,8 @@ def parameters(cmdargs):
         pnum = 3
     else:
         pnum = 2
-    # probdir = 'data/all_n'+str(nQubits)+'p'+str(pnum)+learningRule
-    probdir = 'problems/all_n'+str(nQubits)+'p'+str(pnum)+learningRule
+    probdir = 'data/hopfield_all_n'+str(nQubits)+'p'+str(pnum)+learningRule
+#     probdir = 'problems/all_n'+str(nQubits)+'p'+str(pnum)+learningRule
     if isinstance(T, collections.Iterable):
         probdir += 'MultiT'
     if os.path.isdir(probdir):

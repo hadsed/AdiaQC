@@ -20,10 +20,10 @@ def parameters(cmdargs):
 
     # The Hopfield parameters
     hparams = {
-        'numNeurons': 5,
-        'inputState': [1,1,-1,-1,1],
+        'numNeurons': cmdargs['qubits'],
+        'inputState': [ -1 if i % 2 else 1 for i in range(cmdargs['qubits']) ],
         'learningRule': cmdargs['simtype'],
-        'numMemories': 3
+        'numMemories': int(cmdargs['farg'])
         }
 
     # Basic simulation params
@@ -32,7 +32,6 @@ def parameters(cmdargs):
     dt = 0.01*T
 
     # Output parameters
-    output = 1 # Turn on/off all output except final probabilities
     binary = 1 # Save as binary Numpy
     progressout = 0 # Output simulation progress over anneal timesteps
 

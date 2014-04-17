@@ -15,6 +15,8 @@ if __name__=="__main__":
                       type="int", help="Number of neurons/qubits.")
     parser.add_option("-n", "--nummems", dest="nummems", default=1,
                       type="int", help="Number of memories.")
+    parser.add_option("-b", "--nbegin", dest="begin", default=0,
+                      type="int", help="Instance number to begin at.")
     # Learning rule mode is:
     # 0 : all
     # 1 : hebb
@@ -27,21 +29,22 @@ if __name__=="__main__":
                       type="int", help="Learning rule mode.")
     (options, args) = parser.parse_args()
     n_instances = options.instances
+    n_begin = options.begin
     max_processes = options.maxproc
     nummems = options.nummems
     qubits = options.qubits
     lmode = options.lmode
 
-# n_instances = 5488  # 32 + 496 + 4960
+n_instances = 5488  # 32 + 496 + 4960
+nrng = range(n_begin, n_instances)
 processes = set()
-nrng = range(n_instances)
 
 # Get into the right dir (we're in problems)
 os.chdir('../')
 
 # Python command
 python = "python2.7"
-hop = "hopfield_batch"
+hop = "hopfield_batch_all"
 
 # Run Hebb rule instances
 if (lmode == 0) or (lmode == 1) or (lmode == 4) or (lmode == 5):

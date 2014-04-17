@@ -34,11 +34,19 @@ if __name__=="__main__":
     parser.add_option("-k", "--simtype", dest="simtype", default=None,
                       type="string", 
                       help="Further specification of problem type, if needed.")
+    parser.add_option("-q", "--qubits", dest="qubits", default=None,
+                      type="int", 
+                      help="Number of qubits, if needed for batch scripts.")
+    parser.add_option("-f", "--farg", dest="farg", default=None,
+                      type="string", 
+                      help="Just another parameter, if needed.")
     (options, args) = parser.parse_args()
     problem = options.problem
     relpath = options.relpath
     instance = options.instance
     simtype = options.simtype
+    qubits = options.qubits
+    farg = options.farg
 
 # Clean up the problem path
 problemClean = problem.replace('/', '.')
@@ -64,7 +72,9 @@ except ImportError:
 cmdargs = {'problem': problem, 
            'relpath': relpath, 
            'instance': instance,
-           'simtype': simtype}
+           'simtype': simtype,
+           'qubits': qubits,
+           'farg': farg}
 params = fparams.parameters(cmdargs)
 
 # Create data directory
