@@ -6,9 +6,7 @@ Description: Prints probabilities to screen.
 '''
 
 import os, optparse, sys
-import itertools
 import numpy as np
-import pylab as pl
 
 # Command line options
 if __name__=="__main__":
