@@ -17,7 +17,7 @@ if __name__=="__main__":
     parser.add_option("-s", "--sort", dest="sort", default=0,
                       type="int", 
                       help="Sort by probabilities.")
-    parser.add_option("-p", "--print", dest="print", default=1,
+    parser.add_option("-p", "--print", dest="printscrn", default=1,
                       type="int", 
                       help="Print to screen.")
     parser.add_option("-o", "--output", dest="output", default=0,
@@ -27,6 +27,7 @@ if __name__=="__main__":
     filename = options.filename
     sort = options.sort
     output = options.output
+    printscrn = options.printscrn
 
 # Get data
 probs = np.load(filename)
@@ -38,7 +39,7 @@ if sort:
     zipped = sorted(zipped, key=lambda x: x[1])[::-1]
 
 # Print
-if print:
+if printscrn:
     for pair in zipped:
         print pair
 
