@@ -30,10 +30,6 @@ if binary:
 else:
     eigs = np.loadtxt('eigenspectrum.dat')
 
-# probs = np.load(fpath+str(num)+'/probsT'+str(t)+'.dat.npy')
-# bstrs = [ line.rstrip('\n') for line in open(fpath+str(num)+
-#                                              '/statelabels.txt') ]
-
 time = eigs[:,0]/eigs[-1,0]
 eigs = eigs[:,1:]
 
