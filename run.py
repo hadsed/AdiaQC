@@ -119,7 +119,8 @@ outinfo = {
     'probout': params['probout'],
     'mingap': params['mingap'],
     'binary': params['binary'],
-    'progressout': params['progressout']
+    'progressout': params['progressout'],
+    'stateoverlap': params['stateoverlap']
     }
 
 # Copy the input file to the output dir

@@ -86,6 +86,10 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
         if outinfo['progressout']:
             output.ProgressOutput(t, T, outinfo['outdir'])
 
+        # Output the overlap with pattern vectors
+        if outinfo['stateoverlap'] is not None:
+            output.StateOverlapOutput(t, outinfo, Psi)
+
     # Output stuff as needed
     if (outinfo['eigdat']): 
         output.RecordEigSpec(eigspec, outinfo['outdir'], outinfo['binary'])
@@ -95,6 +99,8 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
         output.RecordOverlap(overlap, outinfo['outdir'], T, outinfo['binary'])
     if (outinfo['overlapplot']): 
         output.PlotOverlap(overlap, outinfo['outdir'], T)
+    if outinfo['stateoverlap'] is not None:
+        output.StateOverlapLabelsOutput(t, outinfo)
 
     return Psi, mingap
 

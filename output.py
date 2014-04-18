@@ -186,3 +186,28 @@ def ProgressOutput(t, T, dpath):
     with open(dpath+"/progress_output.txt", "a") as outfile:
         outfile.write("Completed t: " + str(t) + 
                       " out of T: " + str(T) + "\n")
+
+def StateOverlapOutput(t, outinfo, psi):
+    """
+    Output the overlap with psi and a specified state at some timestep.
+    """
+    # Fix up probabilities
+    idx = sp.array(outinfo['stateoverlap'], dtype=int)[:,0]
+    probs = sp.power(abs(psi[idx]), 2).ravel()
+    # Write to file
+    fname = outinfo['outdir']+"/state_overlap_T"+str(t)+".txt"
+    if outinfo['binary']:
+        sp.save(fname, probs)
+    else:
+        sp.savetxt(fname, probs)
+
+def StateOverlapLabelsOutput(t, outinfo):
+    """
+    Output the labels for overlap with psi and a specified state.
+    """
+    # Write bitstrings to file
+    fname = outinfo['outdir']+"/state_overlap_labels.txt"
+    output = sp.array(outinfo['stateoverlap'])[:,1]
+    with open(fname, 'w') as f:
+        for bitstr in output:
+            f.write(bitstr+'\n')
