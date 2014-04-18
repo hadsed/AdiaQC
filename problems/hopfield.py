@@ -106,4 +106,5 @@ def parameters(cmdargs):
         'probshow': probshow,
         'probout': probout,
         'mingap': mingap,
+        'stateoverlap': None
         }

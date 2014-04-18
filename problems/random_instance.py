@@ -26,7 +26,7 @@ def parameters(cmdargs):
     binary = 1 # Save as binary Numpy
     progressout = 0 # Output simulation progress over anneal timesteps
 
-    eigspecdat = 0 # Output data for eigspec
+    eigspecdat = 1 # Output data for eigspec
     eigspecplot = 0 # Plot eigspec
     eigspecnum = 2**nQubits # Number of eigenvalues
     fidelplot = 0 # Plot fidelity
@@ -48,7 +48,7 @@ def parameters(cmdargs):
     outputdir = probdir + '/' + str(outnum) + '/'
 
     probshow = 0 # Print final state probabilities to screen
-    probout = 0 # Output probabilities to file
+    probout = 1 # Output probabilities to file
     mingap = 0 # Record the minimum spectral gap
 
     errchk = 0 # Error-checking on/off (for simulation accuracy)
@@ -100,4 +100,5 @@ def parameters(cmdargs):
         'probshow': probshow,
         'probout': probout,
         'mingap': mingap,
+        'stateoverlap': None
         }

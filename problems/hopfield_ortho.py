@@ -1,6 +1,6 @@
 '''
 
-File: hopfield.py
+File: hopfield_ortho.py
 Author: Hadayat Seddiqi
 Date: 4.5.13
 Description: Parameters for a Hopfield neural network.
@@ -19,19 +19,37 @@ def parameters(cmdargs):
 
     # The Hopfield parameters
     hparams = {
-        'numNeurons': 10,
-        'inputState': sp.eye(10)[0,:].tolist(),
+        'numNeurons': cmdargs['qubits'],
+        'inputState': None,
         'learningRule': cmdargs['simtype'],
         'numMemories': 0
         }
-    
+
+    # Set input state
+    inpst = sp.eye(cmdargs['qubits'])[0,:] - 1
+    inpst[inpst == 0] = 1
+    hparams['inputState'] = inpst.tolist()
+
+    # Construct memories
     imems = cmdargs['instance']
-    memories = sp.eye(10)[0:imems,:].tolist()
+    memories = sp.eye(cmdargs['qubits'])[0:imems,:]
+    memories[memories == 0] -= 1
+    memories = memories.tolist()
 
     # Basic simulation params
     nQubits = hparams['numNeurons']
     T = 15. # sp.arange(0.1, 15, 0.5)
     dt = 0.01*T
+
+    # Define states for which to track probabilities in time
+    import statelabels
+    label_list = statelabels.GenerateLabels(nQubits)
+    stateoverlap = []
+    for mem in memories:
+        # Convert spins to bits
+        bitstr = ''.join([ '0' if k == -1 else '1' for k in mem ])
+        # Get the index of the current (converted) memory and add it to list
+        stateoverlap.append([ label_list.index(bitstr), bitstr ])
 
     # Output parameters
     binary = 1 # Save output files as binary Numpy format
@@ -108,13 +126,6 @@ def parameters(cmdargs):
         memMat = sp.matrix(memories).T
         beta = sp.triu(memMat * sp.linalg.pinv(memMat))
 
-    # # Construct pattern matrix according to the Hebb learning rule
-    # for i in range(neurons):
-    #     for j in range(neurons):
-    #         for p in range(len(memories)):
-    #             beta[i,j] += ( memories[p][i]*memories[p][j] -
-    #                            len(memories)*(i == j) )
-
     beta = sp.triu(beta)/float(neurons)
 
     # Usually we specify outputs that may be of interest in the form of a dict, 
@@ -153,4 +164,5 @@ def parameters(cmdargs):
         'probshow': probshow,
         'probout': probout,
         'mingap': mingap,
+        'stateoverlap': stateoverlap
         }

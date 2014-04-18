@@ -1,9 +1,9 @@
 '''
 
-File: hopfield_batch_all.py
+File: hopfield_random.py
 Author: Hadayat Seddiqi
-Date: 3.11.14
-Description: Run Hopfield net.
+Date: 4.17.13
+Description: Parameters for a Hopfield neural network.
 
 '''
 
@@ -12,32 +12,47 @@ import scipy as sp
 import itertools
 import random
 import collections
-import cPickle as pickle
 
 def parameters(cmdargs):
     """
     """
 
-    # import problems.hopfield.params as params
+    # The Hopfield parameters
+    hparams = {
+        'numNeurons': cmdargs['qubits'],
+        'inputState': [ 2*sp.random.random_integers(0,1)-1 
+                        for k in xrange(cmdargs['qubits']) ],
+        'learningRule': cmdargs['simtype'],
+        'numMemories': int(cmdargs['farg'])
+        }
 
-    # learningRule = params.learningRules[params.rule]
-    learningRule = cmdargs['simtype']
-    # nQubits = params.numQubits
-    nQubits = 5
-    # T = params.annealTime
-    T = sp.arange(0.1, 15, 0.5)
-    T = 10.0
+    # Construct memories
+    memories = [ [ 2*sp.random.random_integers(0,1)-1 
+                   for k in xrange(hparams['numNeurons']) ]
+                 for j in xrange(hparams['numMemories']) ]
+
+    # Basic simulation params
+    nQubits = hparams['numNeurons']
+    T = 15. # sp.arange(0.1, 15, 0.5)
     dt = 0.01*T
-    inputstate = [1,1,-1,-1,1]
+
+    # Define states for which to track probabilities in time
+    import statelabels
+    label_list = statelabels.GenerateLabels(nQubits)
+    stateoverlap = []
+    for mem in memories:
+        # Convert spins to bits
+        bitstr = ''.join([ '0' if k == -1 else '1' for k in mem ])
+        # Get the index of the current (converted) memory and add it to list
+        stateoverlap.append([ label_list.index(bitstr), bitstr ])
 
     # Output parameters
-    output = 1 # Turn on/off all output except final probabilities
-    binary = 1 # Save as binary Numpy
-    progressout = 0 # Output simulation progress over anneal timesteps
+    binary = 1 # Save output files as binary Numpy format
+    progressout = 1 # Output simulation progress over anneal timesteps
 
     eigspecdat = 1 # Output data for eigspec
     eigspecplot = 0 # Plot eigspec
-    eigspecnum = 2**nQubits # Number of eigenvalues
+    eigspecnum = 2**nQubits # Number of eigenvalues to output
     fidelplot = 0 # Plot fidelity
     fideldat = 0 # Output fidelity data
     fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
@@ -45,15 +60,8 @@ def parameters(cmdargs):
     overlapplot = 0 # Plot overlap
 
     # Output directory stuff
-    pnum = 0
-    if 32 > cmdargs['instance']:
-        pnum = 1
-    elif (496-1) < cmdargs['instance']:
-        pnum = 3
-    else:
-        pnum = 2
-    probdir = 'data/hopfield_all_n'+str(nQubits)+'p'+str(pnum)+learningRule
-#     probdir = 'problems/all_n'+str(nQubits)+'p'+str(pnum)+learningRule
+    probdir = 'data/hopfield_random/n+'+str(nQubits)+'p'+\
+        str(hparams['numMemories'])+hparams['learningRule']
     if isinstance(T, collections.Iterable):
         probdir += 'MultiT'
     if os.path.isdir(probdir):
@@ -77,41 +85,19 @@ def parameters(cmdargs):
     isingConvert = 0
     isingSigns = {'hx': -1, 'hz': -1, 'hzz': -1}
 
+    # Construct network Ising parameters
     neurons = nQubits
-    memories = []
-
-    # Load the list of memories
-    patternSet = pickle.load(open('problems/n5p'+str(pnum)+'mems.dat', 'rb'))
-    # Define the right index for each pnum case
-    psetIdx = cmdargs['instance']
-    if 31 < cmdargs['instance'] < 496:
-        psetIdx -= 32
-    elif cmdargs['instance'] >= 496:
-        psetIdx -= 496
-    # Iterate through the set that corresponds to the [corrected] instance number
-    for bitstring in patternSet[psetIdx]:
-        # Convert binary to Ising spins
-        spins = [ 1 if k == '1' else -1 for k in bitstring ]
-        memories.append(spins)
-
-    # Make the input the last memory recorded
-    # inputstate = params.inputState
-    # Add in the input state
-    # if params.includeInput and inputstate not in memories:
-    #     memories[0] = inputstate
-    if inputstate not in memories:
-        memories[0] = inputstate
 
     # This is gamma, the appropriate weighting on the input vector
-    isingSigns['hz'] *= 1 - (len(inputstate) - inputstate.count(0))/(2*neurons)
+    isingSigns['hz'] *= 1 - (len(hparams['inputState']) - 
+                             hparams['inputState'].count(0))/(2*neurons)
 
-    # Initialize Hamiltonian parameters
-    alpha = sp.array(inputstate)
+    alpha = sp.array(hparams['inputState'])
     beta = sp.zeros((neurons,neurons))
     delta = sp.array([])
 
     # Construct the memory matrix according to a learning rule
-    if learningRule == 'hebb':
+    if hparams['learningRule'] == 'hebb':
         # Construct pattern matrix according to Hebb's rule
         for i in range(neurons):
             for j in range(neurons):
@@ -119,7 +105,7 @@ def parameters(cmdargs):
                     beta[i,j] += ( memories[p][i]*memories[p][j] -
                                    len(memories)*(i == j) )
         beta = sp.triu(beta)/float(neurons)
-    elif learningRule == 'stork':
+    elif hparams['learningRule'] == 'stork':
         # Construct the memory matrix according to the Storkey learning rule
         memMat = sp.zeros((neurons,neurons))
         for m, mem in enumerate(memories):
@@ -131,32 +117,16 @@ def parameters(cmdargs):
                     memMat[i,j] += 1./neurons*(mem[i]*mem[j] - mem[i]*hji - 
                                                hij*mem[j])
         beta = sp.triu(memMat)
-    elif learningRule == 'proj':
+    elif hparams['learningRule'] == 'proj':
         # Construct memory matrix according to the Moore-Penrose pseudoinverse rule
         memMat = sp.matrix(memories).T
         beta = sp.triu(memMat * sp.linalg.pinv(memMat))
 
-    # Calculate Hamming distance between input state and each memory
-    hammingDistance = []
-    for mem in memories:
-        dist = sp.sum(abs(sp.array(inputstate)-sp.array(mem))/2)
-        hammingDistance.append(dist)
+    beta = sp.triu(beta)/float(neurons)
 
-    hamMean = sp.average(hammingDistance)
-    hamMed = sp.median(hammingDistance)
-
-    # Some outputs
-    outputs = {
-        'nQubits': nQubits,
-        'learningRule': learningRule,
-        'outdir': probdir,
-        'inputState': inputstate,
-        'memories': memories,
-        'hammingDistance': {'dist': hammingDistance,
-                            'mean': hamMean,
-                            'median': hamMed },
-        'annealTime': list(T) if isinstance(T, collections.Iterable) else T
-               }
+    # Usually we specify outputs that may be of interest in the form of a dict, 
+    # but we don't need any for this problem
+    outputs = None
 
     ############################################################################
     ######## All variables must be specified here, do NOT change the keys ######
@@ -190,5 +160,5 @@ def parameters(cmdargs):
         'probshow': probshow,
         'probout': probout,
         'mingap': mingap,
-        'stateoverlap': None
+        'stateoverlap': stateoverlap
         }

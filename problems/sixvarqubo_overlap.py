@@ -48,7 +48,7 @@ def parameters(cmdargs):
     isingConvert = 1
     isingSigns = {'hx': 1, 'hz': 1, 'hzz': -1}
 
-    # Define pattern list for overlap thing
+    # Define states for which to track probabilities in time
     import statelabels
     label_list = statelabels.GenerateLabels(nQubits)
     stateoverlap = []

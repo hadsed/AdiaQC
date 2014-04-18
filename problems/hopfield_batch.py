@@ -1,6 +1,6 @@
 '''
 
-File: lr_all.py
+File: hopfield_batch.py
 Author: Hadayat Seddiqi
 Date: 3.11.14
 Description: Run Hopfield net.
@@ -45,7 +45,7 @@ def parameters(cmdargs):
     overlapplot = 0 # Plot overlap
 
     # Output directory stuff
-    probdir = 'data/hopfield_random/n'+str(nQubits)+'p'+ \
+    probdir = 'data/hopfield_batch/n'+str(nQubits)+'p'+ \
         str(hparams['numMemories'])+hparams['learningRule']
     if isinstance(T, collections.Iterable):
         probdir += 'MultiT'
@@ -180,4 +180,5 @@ def parameters(cmdargs):
         'probshow': probshow,
         'probout': probout,
         'mingap': mingap,
+        'stateoverlap': None
         }
