@@ -42,12 +42,12 @@ def parameters(cmdargs):
     stateoverlap = []
     for mem in memories:
         # Convert spins to bits
-        bitstr = ''.join([ '0' if k == -1 else '1' for k in mem ])
+        bitstr = ''.join([ '0' if k == 1 else '1' for k in mem ])
         # Get the index of the current (converted) memory and add it to list
         stateoverlap.append([ label_list.index(bitstr), bitstr ])
 
     # Output parameters
-    binary = 1 # Save output files as binary Numpy format
+    binary = 0 # Save output files as binary Numpy format
     progressout = 1 # Output simulation progress over anneal timesteps
 
     eigspecdat = 1 # Output data for eigspec
@@ -60,7 +60,7 @@ def parameters(cmdargs):
     overlapplot = 0 # Plot overlap
 
     # Output directory stuff
-    probdir = 'data/hopfield_random/n+'+str(nQubits)+'p'+\
+    probdir = 'data/hopfield_random/n'+str(nQubits)+'p'+\
         str(hparams['numMemories'])+hparams['learningRule']
     if isinstance(T, collections.Iterable):
         probdir += 'MultiT'
@@ -89,8 +89,9 @@ def parameters(cmdargs):
     neurons = nQubits
 
     # This is gamma, the appropriate weighting on the input vector
-    isingSigns['hz'] *= 1 - (len(hparams['inputState']) - 
-                             hparams['inputState'].count(0))/(2*neurons)
+    # isingSigns['hz'] *= 1 - (len(hparams['inputState']) - 
+    #                          hparams['inputState'].count(0))/(2*neurons)
+    isingSigns['hz'] *= 1.0/(10*nQubits)
 
     alpha = sp.array(hparams['inputState'])
     beta = sp.zeros((neurons,neurons))
@@ -124,9 +125,15 @@ def parameters(cmdargs):
 
     beta = sp.triu(beta)/float(neurons)
 
-    # Usually we specify outputs that may be of interest in the form of a dict, 
-    # but we don't need any for this problem
-    outputs = None
+    # Some outputs
+    outputs = {
+        'nQubits': nQubits,
+        'learningRule': hparams['learningRule'],
+        'outdir': probdir,
+        'inputState': hparams['inputState'],
+        'memories': memories,
+        'annealTime': list(T) if isinstance(T, collections.Iterable) else T
+               }
 
     ############################################################################
     ######## All variables must be specified here, do NOT change the keys ######

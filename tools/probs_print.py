@@ -23,14 +23,21 @@ if __name__=="__main__":
     parser.add_option("-o", "--output", dest="output", default=0,
                       type="int", 
                       help="Output to file.")
+    parser.add_option("-b", "--binary", dest="binary", default=1,
+                      type="int", 
+                      help="Binary input or not.")
     (options, args) = parser.parse_args()
     filename = options.filename
     sort = options.sort
     output = options.output
     printscrn = options.printscrn
+    binary = options.binary
 
 # Get data
-probs = np.load(filename)
+if binary:
+    probs = np.load(filename)
+else:
+    probs = np.loadtxt(filename)
 bstrs = [ line.rstrip('\n') for line in open('statelabels.txt') ]
 zipped = zip(bstrs, probs)
 

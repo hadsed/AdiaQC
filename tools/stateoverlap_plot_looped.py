@@ -1,8 +1,10 @@
 '''
-File: stateoverlap_plot.py
+File: stateoverlap_plot_looped.py
 Author: Hadayat Seddiqi
-Date: 4.17.14
-Description: Plots state overlaps with psi in time.
+Date: 4.18.14
+Description: Plots state overlaps with psi in time, but
+             now the plots loop to show all possible
+             memory-pair phase plots (and no 3D).
 '''
 
 import os, optparse, sys
@@ -11,6 +13,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import matplotlib.pyplot as pl
+import itertools
 
 # Command line options
 if __name__=="__main__":
@@ -52,8 +55,8 @@ else:
 # Fix up the data
 data = zip(*data)
 sortidx = np.array(ftimes).argsort()
-data[0] = np.array(data[0])[sortidx]
-data[1] = np.array(data[1])[sortidx]
+for icol, col in enumerate(data):
+    data[icol] = np.array(col)[sortidx]
 time = np.linspace(0,1,len(data[0]))
 
 # Plot timeseries
@@ -62,26 +65,27 @@ pl.xlabel('Time')
 pl.ylabel('Probability')
 pl.ylim([0,1])
 pl.xlim([0,1])
-pl.plot(time, data[0], 'b', label=axis[0])
-pl.plot(time, data[1], 'r', label=axis[1])
+for icol, col in enumerate(data):
+    pl.plot(time, col, label=axis[icol])
 pl.legend(loc=2)
 pl.show()
 
 # Plot phase diagram
-pl.xlabel(axis[0])
-pl.ylabel(axis[1])
-pl.title('Six-var QUBO Phase Diagram')
-pl.plot(data[0], data[1])
-pl.show()
+for pair in itertools.combinations(enumerate(data), 2):
+    pl.xlabel(axis[pair[0][0]])
+    pl.ylabel(axis[pair[1][0]])
+    pl.title('Six-var QUBO Phase Diagram')
+    pl.plot(pair[0][1], pair[1][1])
+    pl.show()
 
-# Plot timeseries in 3D
-fig = pl.figure()
-from matplotlib import pyplot
-from mpl_toolkits.mplot3d import Axes3D
-ax = Axes3D(fig)
-ax.set_title('Phase Diagram in Time')
-ax.set_xlabel(axis[0])
-ax.set_ylabel(axis[1])
-ax.set_zlabel('Time')
-ax.scatter(xs=data[0], ys=data[1], zs=time)
-pl.show()
+# # Plot timeseries in 3D
+# fig = pl.figure()
+# from matplotlib import pyplot
+# from mpl_toolkits.mplot3d import Axes3D
+# ax = Axes3D(fig)
+# ax.set_title('Phase Diagram in Time')
+# ax.set_xlabel(axis[0])
+# ax.set_ylabel(axis[1])
+# ax.set_zlabel('Time')
+# ax.scatter(xs=data[0], ys=data[1], zs=time)
+# pl.show()
