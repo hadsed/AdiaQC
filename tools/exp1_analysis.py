@@ -15,7 +15,7 @@ if __name__=="__main__":
     parser.add_option("-p", "--probsfname", dest="probsfname", default=None,
                       type="string", 
                       help="Filename for output probabilities.")
-    parser.add_option("-o", "--output", dest="output", default=0,
+    parser.add_option("-o", "--output", dest="output", default=1,
                       type="int", 
                       help="Output this report to file.")
     parser.add_option("-b", "--binary", dest="binary", default=1,
@@ -25,7 +25,7 @@ if __name__=="__main__":
                       type="int", 
                       help="Number of qubits/neurons.")
     (options, args) = parser.parse_args()
-    filename = options.probsfname
+    probsfname = options.probsfname
     output = options.output
     binary = options.binary
     qubits = options.qubits
@@ -41,12 +41,13 @@ for root, dirs, files in os.walk('.'):
     # If we are in a dir with no children..
     if dirs == [] and (int(root.split('n')[1].split('p')[0]) == qubits):
         os.chdir(root)
-        # os.system(cmd)
-        success, dist, kmems = analysis(binary)
+        print root
+        success, dist, kmems = analysis(probsfname, binary)
         pl.scatter(kmems, dist, c=('r' if success is False else 'b'))
         os.chdir('../../')
 
-# pl.savefig('p_hamming_plot.png')
+if output:
+    pl.savefig('p_hamming_plot.png')
 pl.show()
 
 def spins2bitstr(vec):
@@ -57,7 +58,7 @@ def hamdist(a,b):
     """ Calculate Hamming distance. """
     return sp.sum(abs(sp.array(a)-sp.array(b))/2.0)
 
-def analysis(binary):
+def analysis(filename, binary):
     """
     """
     # Get probability data
