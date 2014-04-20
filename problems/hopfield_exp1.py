@@ -47,9 +47,9 @@ def parameters(cmdargs):
     # Loop over additional memories, if there are any
     for imem, mem in enumerate(memories[1:]):
         while hamdist(mem, hparams['inputState']) < 2.0:
-            # Generate new pattern
-            memories[imem] = [ 2*sp.random.random_integers(0,1)-1 
-                               for k in xrange(cmdargs['qubits']) ]
+            # Flip a random spin
+            rndbit = sp.random.random_integers(0,hparams['numNeurons']-1)
+            memories[imem+1][rndbit] *= -1
         
     # Basic simulation params
     nQubits = hparams['numNeurons']
