@@ -43,10 +43,10 @@ def parameters(cmdargs):
     # Make sure all other patterns have Hamming distance > 1
     def hamdist(a,b):
         """ Calculate Hamming distance. """
-        return sp.sum(abs(sp.array(a)-sp.array(b))/2)
+        return sp.sum(abs(sp.array(a)-sp.array(b))/2.0)
     # Loop over additional memories, if there are any
     for imem, mem in enumerate(memories[1:]):
-        while hamdist(mem, hparams['inputState']) < 2:
+        while hamdist(mem, hparams['inputState']) < 2.0:
             # Generate new pattern
             memories[imem] = [ 2*sp.random.random_integers(0,1)-1 
                                for k in xrange(cmdargs['qubits']) ]
