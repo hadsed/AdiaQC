@@ -135,11 +135,11 @@ for irule, rule in enumerate(['hebb', 'stork', 'proj']):
     pl.ylim([0,1.3*ymax])
     # Loop over memory count
     for kmems in range(1,qubits):
-        r1 = pl.bar(kmems, csuccess[rule][kmems], width, color='b', alpha=0.5)
+        r1 = pl.bar(kmems-width, csuccess[rule][kmems], width, color='b', alpha=0.5)
         r2 = pl.bar(kmems, cfailure[rule][kmems], width, color='r', alpha=0.5)
     pl.grid()
     pl.legend([r1,r2], ["Success", "Failure"])
 
 # Output to file
 if output:
-    pl.savefig('success_bargraph_'+rule+'.png')
+    pl.savefig('success_bargraph.png')
