@@ -8,6 +8,7 @@ Description: Plots and facts on hopfield experiment #1.
 import os, optparse, sys
 import numpy as np
 import json
+import matplotlib as pl
 
 # Command line options
 if __name__=="__main__":
