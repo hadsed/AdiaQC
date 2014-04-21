@@ -8,7 +8,7 @@ Description: Plots and facts on hopfield experiment #1.
 import os, optparse, sys
 import numpy as np
 import json
-import matplotlib as pl
+import pylab as pl
 
 # Command line options
 if __name__=="__main__":
@@ -31,33 +31,13 @@ if __name__=="__main__":
     binary = options.binary
     qubits = options.qubits
 
-# Set up plot
-pl.xlabel(r'$|P|$')
-pl.ylabel(r'$Avg. Hamming distance$')
-
-# Loop through all data directories
-for root, dirs, files in os.walk('.'):
-    if root == '.':
-        continue
-    # If we are in a dir with no children..
-    if dirs == [] and (int(root.split('n')[1].split('p')[0]) == qubits):
-        os.chdir(root)
-        print root
-        success, dist, kmems = analysis(probsfname, binary)
-        pl.scatter(kmems, dist, c=('r' if success is False else 'b'))
-        os.chdir('../../')
-
-if output:
-    pl.savefig('p_hamming_plot.png')
-pl.show()
-
 def spins2bitstr(vec):
     """ Return a converted bitstring from @vec, a list of spins. """
     return ''.join([ '0' if k == 1 else '1' for k in vec ])
 
 def hamdist(a,b):
     """ Calculate Hamming distance. """
-    return sp.sum(abs(sp.array(a)-sp.array(b))/2.0)
+    return np.sum(abs(np.array(a)-np.array(b))/2.0)
 
 def analysis(filename, binary):
     """
@@ -80,15 +60,36 @@ def analysis(filename, binary):
     answer = props['answer']
 
     # Calculate average Hamming distance
-    avgdist = sp.avg([ hamdist(m) for m in mems ])
+    avgdist = np.average([ hamdist(m, instate) for m in mems ])
     
     # Calculate success
     sortidx = np.argsort(probs)[::-1]
+    sorted_bstrs = np.array(bstrs)[sortidx]
     success = False
-    if bstrs[sortidx][0] is spins2bitstr(answer):
+    if sorted_bstrs[0] is spins2bitstr(answer):
         success = True
-    elif ((bstrs[sortidx][1] is spins2bitstr(answer)) and 
-          (bstrs[sortidx][0] is spins2bitstr(instate))):
+    elif ((sorted_bstrs[1] is spins2bitstr(answer)) and 
+          (sorted_bstrs[0] is spins2bitstr(instate))):
         success = True
 
     return success, avgdist, len(mems)
+
+# Set up plot
+pl.xlabel(r'$|P|$')
+pl.ylabel(r'$Avg. Hamming distance$')
+
+# Loop through all data directories
+for root, dirs, files in os.walk('.'):
+    if root == '.':
+        continue
+    # If we are in a dir with no children..
+    if dirs == [] and (int(root.split('n')[1].split('p')[0]) == qubits):
+        os.chdir(root)
+        print root
+        success, dist, kmems = analysis(probsfname, binary)
+        pl.scatter(kmems, dist, c=('r' if success is False else 'b'))
+        os.chdir('../../')
+
+if output:
+    pl.savefig('p_hamming_plot.png')
+pl.show()
