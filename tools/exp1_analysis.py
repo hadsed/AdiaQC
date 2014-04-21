@@ -66,17 +66,21 @@ def analysis(filename, binary):
     sortidx = np.argsort(probs)[::-1]
     sorted_bstrs = np.array(bstrs)[sortidx]
     success = False
+    prob = 0.0
     if sorted_bstrs[0] == spins2bitstr(answer):
         success = True
+        prob = probs[sortidx][0]
     elif ((sorted_bstrs[1] == spins2bitstr(answer)) and 
           (sorted_bstrs[0] == spins2bitstr(instate))):
         success = True
+        prob = probs[sortidx][1]
 
-    return success, avgdist, len(mems)
+    return success, avgdist, len(mems), prob
 
-# Set up plot
-pl.xlabel('|P|')
-pl.ylabel('Avg. Hamming distance')
+# Initialize some variables we'll want to look at
+csuccess = [0]*qubits
+cfailure = [0]*qubits
+data = []
 
 # Loop through all data directories
 for root, dirs, files in os.walk('.'):
@@ -85,12 +89,36 @@ for root, dirs, files in os.walk('.'):
     # If we are in a dir with no children..
     if dirs == [] and (int(root.split('n')[1].split('p')[0]) == qubits):
         os.chdir(root)
-        print root
-        success, dist, kmems = analysis(probsfname, binary)
-        print success if success is True else None
-        pl.scatter(kmems, dist, c=('r' if success is False else 'b'))
+        success, dist, kmems, prob = analysis(probsfname, binary)
+        data.append([ success, dist, kmems, prob ])
+        # pl.scatter(kmems, dist, c=('r' if success is False else 'b'), marker='x')
+        # pl.scatter(kmems, prob, c=('r' if success is False else 'b'), marker='x')
+        if success:
+            csuccess[kmems-1] += 1
+        else:
+            cfailure[kmems-1] += 1
         os.chdir('../../')
 
+# print '\n'
+# print '=============='
+# print '   Analysis   '
+# print '==============\n'
+# print 'Successes: ', str(csuccess)
+# print 'Failures: ', str(cfailure)
+# print '\n'
+
+# Plot success count bar graph
+width = 0.3
+pl.title('Successes vs. number of patterns in '+str(qubits)+'-qubit network')
+pl.ylabel('Success count')
+pl.xlabel('Number of patterns')
+pl.xlim([0.5,5.5])
+for kmems in range(1,qubits):
+    r1 = pl.bar(kmems-width, csuccess[kmems], width, color='b')
+    r2 = pl.bar(kmems, cfailure[kmems], width, color='r')
+pl.grid()
+pl.legend([r1,r2], ["Success", "Failure"])
+
+# Output to file
 if output:
-    pl.savefig('p_hamming_plot.png')
-# pl.show()
+    pl.savefig('success_bargraph.png')
