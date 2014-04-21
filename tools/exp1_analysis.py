@@ -52,11 +52,9 @@ def analysis(filename, binary):
 
     # Get problem outputs
     props = json.load(open('problem_outputs.dat'))
-    neurons = props['nQubits']
     lrule = props['learningRule']
     mems = props['memories']
     instate = props['inputState']
-    annealtime = props['annealTime']
     answer = props['answer']
 
     # Calculate average Hamming distance
@@ -75,11 +73,15 @@ def analysis(filename, binary):
         success = True
         prob = probs[sortidx][1]
 
-    return success, avgdist, len(mems), prob
+    return success, avgdist, len(mems), prob, lrule
 
 # Initialize some variables we'll want to look at
-csuccess = [0]*qubits
-cfailure = [0]*qubits
+csuccess = {'hebb': [0]*qubits,
+            'stork': [0]*qubits,
+            'proj': [0]*qubits}
+cfailure = {'hebb': [0]*qubits,
+            'stork': [0]*qubits,
+            'proj': [0]*qubits}
 data = []
 
 # Loop through all data directories
@@ -89,14 +91,14 @@ for root, dirs, files in os.walk('.'):
     # If we are in a dir with no children..
     if dirs == [] and (int(root.split('n')[1].split('p')[0]) == qubits):
         os.chdir(root)
-        success, dist, kmems, prob = analysis(probsfname, binary)
-        data.append([ success, dist, kmems, prob ])
+        success, dist, kmems, prob, lrule = analysis(probsfname, binary)
+        data.append([ success, dist, kmems, prob, lrule ])
         # pl.scatter(kmems, dist, c=('r' if success is False else 'b'), marker='x')
         # pl.scatter(kmems, prob, c=('r' if success is False else 'b'), marker='x')
         if success:
-            csuccess[kmems-1] += 1
+            csuccess[lrule][kmems-1] += 1
         else:
-            cfailure[kmems-1] += 1
+            cfailure[lrule][kmems-1] += 1
         os.chdir('../../')
 
 # print '\n'
@@ -109,16 +111,35 @@ for root, dirs, files in os.walk('.'):
 
 # Plot success count bar graph
 width = 0.3
-pl.title('Successes vs. number of patterns in '+str(qubits)+'-qubit network')
-pl.ylabel('Success count')
-pl.xlabel('Number of patterns')
-pl.xlim([0.5,5.5])
-for kmems in range(1,qubits):
-    r1 = pl.bar(kmems-width, csuccess[kmems], width, color='b')
-    r2 = pl.bar(kmems, cfailure[kmems], width, color='r')
-pl.grid()
-pl.legend([r1,r2], ["Success", "Failure"])
+fontsize = 16
+ymax = 0.0
+for key in ['hebb', 'stork', 'proj']:
+    if np.amax(csuccess[key]) > ymax:
+        ymax = np.amax(csuccess[key])
+    if np.amax(cfailure[key]) > ymax:
+        ymax = np.amax(cfailure[key])
+
+fig = pl.figure(figsize=(8,9))
+fig.suptitle('Success vs. # of patterns in '+str(qubits)+
+             '-qubit network', fontsize=fontsize, fontweight='bold')
+# Loop over rules
+for irule, rule in enumerate(['hebb', 'stork', 'proj']):
+    # Plot properties
+    pl.subplot(3,1,irule)
+    pl.title(rule)
+    if irule == 2:
+        pl.ylabel('Success count', fontweight='bold', fontsize=fontsize)
+    if irule == 0:
+        pl.xlabel('Number of patterns', fontweight='bold', fontsize=fontsize)
+    pl.xlim([0.5,5.5])
+    pl.ylim([0,1.3*ymax])
+    # Loop over memory count
+    for kmems in range(1,qubits):
+        r1 = pl.bar(kmems, csuccess[rule][kmems], width, color='b', alpha=0.5)
+        r2 = pl.bar(kmems, cfailure[rule][kmems], width, color='r', alpha=0.5)
+    pl.grid()
+    pl.legend([r1,r2], ["Success", "Failure"])
 
 # Output to file
 if output:
-    pl.savefig('success_bargraph.png')
+    pl.savefig('success_bargraph_'+rule+'.png')
