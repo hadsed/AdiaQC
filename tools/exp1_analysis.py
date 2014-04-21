@@ -66,17 +66,17 @@ def analysis(filename, binary):
     sortidx = np.argsort(probs)[::-1]
     sorted_bstrs = np.array(bstrs)[sortidx]
     success = False
-    if sorted_bstrs[0] is spins2bitstr(answer):
+    if sorted_bstrs[0] == spins2bitstr(answer):
         success = True
-    elif ((sorted_bstrs[1] is spins2bitstr(answer)) and 
-          (sorted_bstrs[0] is spins2bitstr(instate))):
+    elif ((sorted_bstrs[1] == spins2bitstr(answer)) and 
+          (sorted_bstrs[0] == spins2bitstr(instate))):
         success = True
 
     return success, avgdist, len(mems)
 
 # Set up plot
-pl.xlabel(r'$|P|$')
-pl.ylabel(r'$Avg. Hamming distance$')
+pl.xlabel('|P|')
+pl.ylabel('Avg. Hamming distance')
 
 # Loop through all data directories
 for root, dirs, files in os.walk('.'):
@@ -87,9 +87,10 @@ for root, dirs, files in os.walk('.'):
         os.chdir(root)
         print root
         success, dist, kmems = analysis(probsfname, binary)
+        print success if success is True else None
         pl.scatter(kmems, dist, c=('r' if success is False else 'b'))
         os.chdir('../../')
 
 if output:
     pl.savefig('p_hamming_plot.png')
-pl.show()
+# pl.show()
