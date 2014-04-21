@@ -131,15 +131,17 @@ for irule, rule in enumerate(['hebb', 'stork', 'proj']):
         pl.ylabel('Success count', fontweight='bold', fontsize=fontsize)
     if irule == 0:
         pl.xlabel('Number of patterns', fontweight='bold', fontsize=fontsize)
-    pl.xlim([0.5,5.5])
+    pl.xlim([0.5,qubits+0.5])
     pl.ylim([0,1.3*ymax])
     # Loop over memory count
     for kmems in range(1,qubits):
         r1 = pl.bar(kmems-width, csuccess[rule][kmems], width, color='b', alpha=0.5)
         r2 = pl.bar(kmems, cfailure[rule][kmems], width, color='r', alpha=0.5)
     pl.grid()
-    pl.legend([r1,r2], ["Success", "Failure"])
+    leg = pl.legend([r1,r2], ["Success", "Failure"], prop={'size':10})
+    leg.get_frame().set_alpha(0.5)
 
 # Output to file
 if output:
-    pl.savefig('success_bargraph.png')
+    pl.savefig('success_bargraph_n'+str(qubits)+'.png')
+
