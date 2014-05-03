@@ -91,7 +91,7 @@ def parameters(cmdargs):
     # This is gamma, the appropriate weighting on the input vector
     # isingSigns['hz'] *= 1 - (len(hparams['inputState']) - 
     #                          hparams['inputState'].count(0))/(2*neurons)
-    isingSigns['hz'] *= 1.0/(10*nQubits)
+    isingSigns['hz'] *= 1.0/(5*nQubits)
 
     alpha = sp.array(hparams['inputState'])
     beta = sp.zeros((neurons,neurons))
