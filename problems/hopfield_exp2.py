@@ -55,6 +55,16 @@ def parameters(cmdargs):
     T = 15.0
     dt = 0.01*T
 
+    # Define states for which to track probabilities in time
+    import statelabels
+    label_list = statelabels.GenerateLabels(nQubits)
+    stateoverlap = []
+    for mem in memories:
+        # Convert spins to bits
+        bitstr = ''.join([ '0' if k == 1 else '1' for k in mem ])
+        # Get the index of the current (converted) memory and add it to list
+        stateoverlap.append([ label_list.index(bitstr), bitstr ])
+
     # Output parameters
     binary = 1 # Save as binary Numpy
     progressout = 0 # Output simulation progress over anneal timesteps
@@ -69,13 +79,6 @@ def parameters(cmdargs):
     overlapplot = 0 # Plot overlap
 
     # Output directory stuff
-    pnum = 0
-    if 32 > cmdargs['instance']:
-        pnum = 1
-    elif (496-1) < cmdargs['instance']:
-        pnum = 3
-    else:
-        pnum = 2
     probdir = 'data/hopfield_exp2/n'+str(nQubits)+'p'+str(pnum)+learningRule
     if isinstance(T, collections.Iterable):
         probdir += 'MultiT'
@@ -100,41 +103,18 @@ def parameters(cmdargs):
     isingConvert = 0
     isingSigns = {'hx': -1, 'hz': -1, 'hzz': -1}
 
-    neurons = nQubits
-    memories = []
-
-    # Load the list of memories
-    patternSet = pickle.load(open('problems/n5p'+str(pnum)+'mems.dat', 'rb'))
-    # Define the right index for each pnum case
-    psetIdx = cmdargs['instance']
-    if 31 < cmdargs['instance'] < 496:
-        psetIdx -= 32
-    elif cmdargs['instance'] >= 496:
-        psetIdx -= 496
-    # Iterate through the set that corresponds to the [corrected] instance number
-    for bitstring in patternSet[psetIdx]:
-        # Convert binary to Ising spins
-        spins = [ 1 if k == '1' else -1 for k in bitstring ]
-        memories.append(spins)
-
-    # Make the input the last memory recorded
-    # inputstate = params.inputState
-    # Add in the input state
-    # if params.includeInput and inputstate not in memories:
-    #     memories[0] = inputstate
-    if inputstate not in memories:
-        memories[0] = inputstate
-
     # This is gamma, the appropriate weighting on the input vector
-    isingSigns['hz'] *= 1 - (len(inputstate) - inputstate.count(0))/(2*neurons)
+    isingSigns['hz'] *= 1.0/(5*nQubits)
+
+    neurons = nQubits
 
     # Initialize Hamiltonian parameters
-    alpha = sp.array(inputstate)
+    alpha = sp.array(hparams['inputState'])
     beta = sp.zeros((neurons,neurons))
     delta = sp.array([])
 
     # Construct the memory matrix according to a learning rule
-    if learningRule == 'hebb':
+    if hparams['learningRule'] == 'hebb':
         # Construct pattern matrix according to Hebb's rule
         for i in range(neurons):
             for j in range(neurons):
@@ -142,7 +122,7 @@ def parameters(cmdargs):
                     beta[i,j] += ( memories[p][i]*memories[p][j] -
                                    len(memories)*(i == j) )
         beta = sp.triu(beta)/float(neurons)
-    elif learningRule == 'stork':
+    elif hparams['learningRule'] == 'stork':
         # Construct the memory matrix according to the Storkey learning rule
         memMat = sp.zeros((neurons,neurons))
         for m, mem in enumerate(memories):
@@ -154,7 +134,7 @@ def parameters(cmdargs):
                     memMat[i,j] += 1./neurons*(mem[i]*mem[j] - mem[i]*hji - 
                                                hij*mem[j])
         beta = sp.triu(memMat)
-    elif learningRule == 'proj':
+    elif hparams['learningRule'] == 'proj':
         # Construct memory matrix according to the Moore-Penrose pseudoinverse rule
         memMat = sp.matrix(memories).T
         beta = sp.triu(memMat * sp.linalg.pinv(memMat))
@@ -162,7 +142,7 @@ def parameters(cmdargs):
     # Calculate Hamming distance between input state and each memory
     hammingDistance = []
     for mem in memories:
-        dist = sp.sum(abs(sp.array(inputstate)-sp.array(mem))/2)
+        dist = sp.sum(abs(sp.array(hparams['inputState'])-sp.array(mem))/2)
         hammingDistance.append(dist)
 
     hamMean = sp.average(hammingDistance)
@@ -171,9 +151,9 @@ def parameters(cmdargs):
     # Some outputs
     outputs = {
         'nQubits': nQubits,
-        'learningRule': learningRule,
+        'learningRule': hparams['learningRule'],
         'outdir': probdir,
-        'inputState': inputstate,
+        'hparams['inputState']': hparams['inputState'],
         'memories': memories,
         'hammingDistance': {'dist': hammingDistance,
                             'mean': hamMean,
@@ -213,5 +193,5 @@ def parameters(cmdargs):
         'probshow': probshow,
         'probout': probout,
         'mingap': mingap,
-        'stateoverlap': None
+        'stateoverlap': stateoverlap
         }
