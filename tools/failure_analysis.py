@@ -40,9 +40,9 @@ def analysis(filename, binary):
         try:
             probs = np.load(filename)
             eigs = np.load('eigenspectrum.dat.npy')
-        except IOError, e:
-            print "IOError: No file "+filename+".npy. \nYou probably forgot "+\
-                "to specify the appropriate command-line argument: -b 0."
+        except (IOError, e):
+            print ("IOError: No file "+filename+".npy. \nYou probably forgot "+\
+                "to specify the appropriate command-line argument: -b 0.")
             sys.exit(0)
     else:
         probs = np.loadtxt(filename)
@@ -86,7 +86,7 @@ def analysis(filename, binary):
 
     return success, avgdist, len(mems), prob, lrule, times, eigs, mingap, mgt
 
-def getdata(qubits):
+def getdata(qubits, binary, probsfname):
     """
     Walk through all directories and get relevant data, outputting to files. Calls analysis().
     """
@@ -136,30 +136,124 @@ def getdata(qubits):
 
             os.chdir('../../')
 
-    np.save('successdata_n'+str(qubits)+'.dat')
-    np.save('failuredata_n'+str(qubits)+'.dat')
+    np.save('successdata_n'+str(qubits)+'.dat', data)
+    np.save('failuredata_n'+str(qubits)+'.dat', faildata)
 
 # Command line options
 if __name__=="__main__":
     parser = optparse.OptionParser("usage: %prog [options] arg1 arg2")
-    parser.add_option("-p", "--probsfname", dest="probsfname", default=None,
+    parser.add_option("-f", "--fname", dest="probsfname", default=None,
                       type="string", 
                       help="Filename for output probabilities.")
-    parser.add_option("-o", "--output", dest="output", default=1,
+    parser.add_option("-g", "--getdata", dest="getdata", default=0,
                       type="int", 
-                      help="Output this report to file.")
+                      help="Do we need to get the success/failure data.")
     parser.add_option("-b", "--binary", dest="binary", default=1,
                       type="int", 
                       help="Binary input or not (default = 1).")
     parser.add_option("-q", "--qubits", dest="qubits", default=None,
                       type="int", 
                       help="Number of qubits/neurons.")
+    parser.add_option("-p", "--patterns", dest="patterns", default=None,
+                      type="int", 
+                      help="Number of patterns (default ignores this and does all).")
     (options, args) = parser.parse_args()
     probsfname = options.probsfname
-    output = options.output
+    getdataopt = options.getdata
     binary = options.binary
     qubits = options.qubits
+    patterns = options.patterns
 
     # Grab the data
-    getdata(qubits)
+    if getdataopt:
+        getdata(qubits, binary, probsfname)
+        print ("Data collected and outputted to [success,failure]data_n[qubits].dat.npy.")
+        print ("Exiting. To run plots, run this script again with -g 0.")
+        sys.exit(0)
+    else:
+        successdat = np.load('successdata_n'+str(qubits)+'.dat.npy')
+        failuredat = np.load('failuredata_n'+str(qubits)+'.dat.npy')
 
+    # Data is in this format:
+    # [ Hamming dist., answer prob., learning rule (integer), mingap, mingap time]
+    # [ d, p, l, m, mt ]
+
+    # Scatter plot
+    # pl.title('Failure Analysis')
+    # pl.xlabel('Hamming Distance')
+    # pl.ylabel('Minimum Spectral Gap Time')
+    # marker = 'x'
+    # msize = 2
+    # xIdx = 0
+    # yIdx = 4
+    # for rec in successdat:
+    #     r1 = pl.scatter(rec[xIdx], rec[yIdx], c='b', marker=marker, s=msize)
+    # for rec in failuredat:
+    #     r2 = pl.scatter(rec[xIdx], rec[yIdx], c='r', marker=marker, s=msize)
+    # leg = pl.legend([r1,r2], ["Success", "Failure"], prop={'size':10})
+    # leg.get_frame().set_alpha(0.5)
+    # pl.show()
+
+    # Bar graphs
+    width = 0.1
+    htype = 'bar'
+    fontsize = 16
+    fig = pl.figure(figsize=(8,8))
+    fig.suptitle('Failure Analysis: '+str(qubits)+' qubits', 
+                 fontsize=fontsize, fontweight='bold')
+
+    # Hamming distances
+    ax = fig.add_subplot(4,1,1)
+    recIdx = 0
+    nbins = 15
+    ax.set_title('Average Hamming distance')
+    rmax = max(successdat[:,recIdx].max(), failuredat[:,recIdx].max())
+    rmin = min(successdat[:,recIdx].min(), failuredat[:,recIdx].min())
+    ax.hist(successdat[:,recIdx], nbins, normed=0, alpha=0.25, facecolor='blue', 
+            histtype=htype, label="Successes", range=(rmin,rmax))
+    ax.hist(failuredat[:,recIdx], nbins, normed=0, alpha=0.25, facecolor='red', 
+            histtype=htype, label="Failures", range=(rmin,rmax))
+    pl.grid()
+    pl.legend(prop={'size':8})
+    
+    # Answer probabilities
+    ax = fig.add_subplot(4,1,2)
+    recIdx = 1
+    nbins = 35
+    ax.set_title('Answer probability (log-normed)')
+    rmax = max(successdat[:,recIdx].max(), failuredat[:,recIdx].max())
+    rmin = min(successdat[:,recIdx].min(), failuredat[:,recIdx].min())
+    ax.hist(successdat[:,recIdx], nbins, normed=1, alpha=0.25, facecolor='blue', 
+            histtype=htype, label="Successes", log=True, range=(rmin,rmax))
+    ax.hist(failuredat[:,recIdx], nbins, normed=1, alpha=0.25, facecolor='red', 
+            histtype=htype, label="Failures", log=True, range=(rmin,rmax))
+    pl.grid()
+
+    # Mingap
+    ax = fig.add_subplot(4,1,3)
+    recIdx = 3
+    nbins = 15
+    ax.set_title('Minimum Spectral Gap (log-normed)')
+    rmax = max(successdat[:,recIdx].max(), failuredat[:,recIdx].max())
+    rmin = min(successdat[:,recIdx].min(), failuredat[:,recIdx].min())
+    ax.hist(successdat[:,recIdx], nbins, normed=1, alpha=0.25, facecolor='blue', 
+            histtype=htype, label="Successes", log=True, range=(rmin,rmax))
+    ax.hist(failuredat[:,recIdx], nbins, normed=1, alpha=0.25, facecolor='red', 
+            histtype=htype, label="Failures", log=True, range=(rmin,rmax))
+    pl.grid()
+
+    # Mingap time
+    ax = fig.add_subplot(4,1,4)
+    recIdx = 4
+    nbins = 15
+    ax.set_title('Time of Minimum Spectral Gap (log-normed)')
+    rmax = max(successdat[:,recIdx].max(), failuredat[:,recIdx].max())
+    rmin = min(successdat[:,recIdx].min(), failuredat[:,recIdx].min())
+    ax.hist(successdat[:,recIdx], nbins, normed=1, alpha=0.25, facecolor='blue', 
+            histtype=htype, label="Successes", log=True, range=(rmin,rmax))
+    ax.hist(failuredat[:,recIdx], nbins, normed=1, alpha=0.25, facecolor='red', 
+            histtype=htype, label="Failures", log=True, range=(rmin,rmax))
+    pl.grid()
+
+    pl.subplots_adjust(hspace=0.5)
+    pl.savefig('failure_analysis_n'+str(qubits)+'.png')
