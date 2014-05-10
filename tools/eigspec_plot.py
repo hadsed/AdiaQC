@@ -16,8 +16,16 @@ if __name__=="__main__":
     parser.add_option("-b", "--binary", dest="binary", default=1,
                       type="int", 
                       help="Whether data file is in binary (1) or not (0).")
+    parser.add_option("-f", "--fname", dest="filename", default=None,
+                      type="string", 
+                      help="Output filename (without .png suffix).")
+    parser.add_option("-e", "--eignum", dest="eignum", default=None,
+                      type="int", 
+                      help="Number of eigenvalues to plot (from smallest).")
     (options, args) = parser.parse_args()
     binary = options.binary
+    filename = options.filename
+    eignum = options.eignum
 
 # Get data
 if binary:
@@ -32,11 +40,16 @@ else:
 
 time = eigs[:,0]/eigs[-1,0]
 eigs = eigs[:,1:]
+if not eignum:
+    eignum = eigs.shape[1]
 
-for col in xrange(eigs.shape[1]):
+for col in xrange(eignum):
     pl.plot(time, eigs[:,col])
 
 pl.title('Eigenspectrum')
 pl.xlabel('Time')
 pl.ylabel('Energy')
-pl.savefig('eigenspectrum.png')
+if filename is None:
+    pl.savefig('eigenspectrum.png')
+else:
+    pl.savefig(filename+'.png')

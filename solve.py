@@ -58,12 +58,13 @@ def ExpPert(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
             or outinfo['eigdat'] or outinfo['eigplot']
             or outinfo['fiddat'] or outinfo['fidplot']):
             # Unfortunately we cannot compute all eigenpairs
+            neigs = min(2**nQubits-1, outinfo['eignum'])
             Hvals, Hvecs = sla.eigsh(cx*hx + cz*(hz + hzz), 
-                                     k=2**nQubits-1,
-                                     which='SM')
+                                     k=neigs,
+                                     which='SA')
             # Sort by eigenvalues
             idx = Hvals.argsort()
-            Hvals = Hvals[idx]
+            Hvals = Hvals[idx]/dt
             Hvecs = Hvecs[:,idx]
 
             if mingap is None:
