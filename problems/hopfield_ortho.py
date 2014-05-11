@@ -126,8 +126,6 @@ def parameters(cmdargs):
         memMat = sp.matrix(memories).T
         beta = sp.triu(memMat * sp.linalg.pinv(memMat))
 
-    beta = sp.triu(beta)/float(neurons)
-
     # Usually we specify outputs that may be of interest in the form of a dict, 
     # but we don't need any for this problem
     outputs = None

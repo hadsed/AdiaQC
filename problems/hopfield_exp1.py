@@ -143,8 +143,6 @@ def parameters(cmdargs):
         memMat = sp.matrix(memories).T
         beta = sp.triu(memMat * sp.linalg.pinv(memMat))
 
-    beta = sp.triu(beta)/float(neurons)
-
     # Some outputs
     outputs = {
         'nQubits': nQubits,

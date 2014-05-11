@@ -12,17 +12,17 @@ import scipy as sp
 def parameters(cmdargs):
     """
     """
-    nQubits = 4
-    T = 10.0
+    nQubits = 5
+    T = 100.0
     #T = sp.arange(2,23,4.0) # Output a sequence of anneal times
-    dt = 0.01
+    dt = 0.01*T
 
     # Output parameters
     binary = 0 # Save output files as binary Numpy format
     progressout = 0 # Output simulation progress over anneal timesteps
 
     outputdir = 'data/hopfield/' # In relation to run.py
-    eigspecdat = 0 # Output data for eigspec
+    eigspecdat = 1 # Output data for eigspec
     eigspecplot = 1 # Plot eigspec
     eigspecnum = 2**nQubits # Number of eigenvalues to output
     fidelplot = 0 # Plot fidelity
@@ -46,11 +46,15 @@ def parameters(cmdargs):
 
     # Construct network Ising parameters
     neurons = nQubits
-    memories = [ [1,1,1,1], [-1,1,-1,1], [1,-1,1,-1] ]
-    inputstate = [1,1,1,1]
+    # memories = [ [1,1,1,1,1], [-1,1,-1,1,1], [1,-1,1,-1,-1] ]
+    # inputstate = [1,1,-1,1,1]
+    memories = [ [1,1,1,1,-1],
+                 [-1,1,1,-1,-1] ]
+    inputstate = [1,1,-1,1,-1]
 
     # This is gamma, the appropriate weighting on the input vector
-    isingSigns['hz'] *= 1 - (len(inputstate) - inputstate.count(0))/(2*neurons)
+    # isingSigns['hz'] *= 1 - (len(inputstate) - inputstate.count(0))/(2*neurons)
+    isingSigns['hz'] *= 0.05
 
     alpha = sp.array(inputstate)
     beta = sp.zeros((neurons,neurons))
@@ -62,13 +66,23 @@ def parameters(cmdargs):
             for p in range(len(memories)):
                 beta[i,j] += ( memories[p][i]*memories[p][j] -
                                len(memories)*(i == j) )
-
     beta = sp.triu(beta)/float(neurons)
 
-    # Test message
-    print("\nThe best answer should be |0000>, where zero means \n"
-          "spin-up (equivalent to one in spin-variables--one in \n"
-          "binary means negative one in spin-variables).\n")
+    # Construct the memory matrix according to the Storkey learning rule
+    # memMat = sp.zeros((neurons,neurons))
+    # for m, mem in enumerate(memories):
+    #     for i in range(neurons):
+    #         for j in range(neurons):
+    #             hij = sp.sum([ memMat[i,k]*mem[k] for k in range(neurons) ])
+    #             hji = sp.sum([ memMat[j,k]*mem[k] for k in range(neurons) ])
+    #             # Don't forget to make the normalization a float!
+    #             memMat[i,j] += 1./neurons*(mem[i]*mem[j] - mem[i]*hji - 
+    #                                        hij*mem[j])
+    # beta = sp.triu(memMat)
+
+    # Construct memory matrix according to the Moore-Penrose pseudoinverse rule
+    # memMat = sp.matrix(memories).T
+    # beta = sp.triu(memMat * sp.linalg.pinv(memMat))
 
     # Usually we specify outputs that may be of interest in the form of a dict, 
     # but we don't need any for this problem

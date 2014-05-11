@@ -1,9 +1,12 @@
 '''
 
-File: hopfield_random.py
+File: hopfield_gamma.py
 Author: Hadayat Seddiqi
-Date: 4.17.13
-Description: Parameters for a Hopfield neural network.
+Date: 5.10.14
+Description: Do a [deterministic] Hopfield run while taking in
+             the bias term, Gamma, as a cmd arg. allowing us to
+             study the effects on the eigenspectrum and success
+             probabilities.
 
 '''
 
@@ -19,40 +22,28 @@ def parameters(cmdargs):
 
     # The Hopfield parameters
     hparams = {
-        'numNeurons': cmdargs['qubits'],
-        'inputState': [ 2*sp.random.random_integers(0,1)-1 
-                        for k in xrange(cmdargs['qubits']) ],
+        'numNeurons': 5,
+        'inputState': [1,1,-1,1,-1],
         'learningRule': cmdargs['simtype'],
-        'numMemories': int(cmdargs['farg'])
+        'bias': float(cmdargs['farg'])
         }
 
     # Construct memories
-    memories = [ [ 2*sp.random.random_integers(0,1)-1 
-                   for k in xrange(hparams['numNeurons']) ]
-                 for j in xrange(hparams['numMemories']) ]
+    memories = [ [1,1,1,1,-1],
+                 [-1,1,-1,-1,1] ]
 
     # Basic simulation params
     nQubits = hparams['numNeurons']
-    T = 15. # sp.arange(0.1, 15, 0.5)
+    T = 100.0
     dt = 0.01*T
 
-    # Define states for which to track probabilities in time
-    import statelabels
-    label_list = statelabels.GenerateLabels(nQubits)
-    stateoverlap = []
-    for mem in memories:
-        # Convert spins to bits
-        bitstr = ''.join([ '0' if k == 1 else '1' for k in mem ])
-        # Get the index of the current (converted) memory and add it to list
-        stateoverlap.append([ label_list.index(bitstr), bitstr ])
-
     # Output parameters
-    binary = 0 # Save output files as binary Numpy format
-    progressout = 1 # Output simulation progress over anneal timesteps
+    binary = 1 # Save output files as binary Numpy format
+    progressout = 0 # Output simulation progress over anneal timesteps
 
     eigspecdat = 1 # Output data for eigspec
     eigspecplot = 0 # Plot eigspec
-    eigspecnum = 2**nQubits # Number of eigenvalues to output
+    eigspecnum = 2**(nQubits-1) # Number of eigenvalues to output
     fidelplot = 0 # Plot fidelity
     fideldat = 0 # Output fidelity data
     fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
@@ -60,8 +51,8 @@ def parameters(cmdargs):
     overlapplot = 0 # Plot overlap
 
     # Output directory stuff
-    probdir = 'data/hopfield_random/n'+str(nQubits)+'p'+\
-        str(hparams['numMemories'])+hparams['learningRule']
+    probdir = 'data/hopfield_gamma/n'+str(nQubits)+'p'+\
+        str(len(memories))+hparams['learningRule']
     if isinstance(T, collections.Iterable):
         probdir += 'MultiT'
     if os.path.isdir(probdir):
@@ -91,7 +82,7 @@ def parameters(cmdargs):
     # This is gamma, the appropriate weighting on the input vector
     # isingSigns['hz'] *= 1 - (len(hparams['inputState']) - 
     #                          hparams['inputState'].count(0))/(2*neurons)
-    isingSigns['hz'] *= 1.0/(5*nQubits)
+    isingSigns['hz'] *= hparams['bias']
 
     alpha = sp.array(hparams['inputState'])
     beta = sp.zeros((neurons,neurons))
@@ -130,6 +121,8 @@ def parameters(cmdargs):
         'outdir': probdir,
         'inputState': hparams['inputState'],
         'memories': memories,
+        'answer': memories[0],
+        'bias': hparams['bias'],
         'annealTime': list(T) if isinstance(T, collections.Iterable) else T
                }
 
@@ -165,5 +158,5 @@ def parameters(cmdargs):
         'probshow': probshow,
         'probout': probout,
         'mingap': mingap,
-        'stateoverlap': stateoverlap
+        'stateoverlap': None
         }
