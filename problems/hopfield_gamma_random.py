@@ -22,19 +22,33 @@ def parameters(cmdargs):
 
     # The Hopfield parameters
     hparams = {
-        'numNeurons': 5,
-        'inputState': [1,1,-1,1,-1],
+        'numNeurons': cmdargs['qubits'],
+        'inputState': [ 2*sp.random.random_integers(0,1)-1 
+                        for k in xrange(cmdargs['qubits']) ],
         'learningRule': cmdargs['simtype'],
-        'bias': float(cmdargs['farg'])
+        'bias': float(cmdargs['farg']),
+        'numMemories': sp.random.random_integers(1,cmdargs['qubits'])
         }
 
     # Construct memories
-    memories = [ [1,1,1,1,-1],
-                 [-1,1,-1,-1,1],
-                 [1,-1,-1,1,1],
-                 [-1,-1,-1,1,-1],
-                 [-1,1,-1,-1,-1],
-                 [-1,-1,-1,-1,-1] ]
+    memories = [ [ 2*sp.random.random_integers(0,1)-1 
+                   for k in xrange(hparams['numNeurons']) ]
+                 for j in xrange(hparams['numMemories']) ]
+
+    # At least one pattern must be one Hamming unit away from the input
+    memories[0] = list(hparams['inputState'])
+    memories[0][sp.random.random_integers(0,hparams['numNeurons']-1)] *= -1
+
+    # Make sure all other patterns have Hamming distance > 1
+    def hamdist(a,b):
+        """ Calculate Hamming distance. """
+        return sp.sum(abs(sp.array(a)-sp.array(b))/2.0)
+    # Loop over additional memories, if there are any
+    for imem, mem in enumerate(memories[1:]):
+        while hamdist(mem, hparams['inputState']) < 2.0:
+            # Flip a random spin
+            rndbit = sp.random.random_integers(0,hparams['numNeurons']-1)
+            memories[imem+1][rndbit] *= -1
 
     # Basic simulation params
     nQubits = hparams['numNeurons']
@@ -55,8 +69,7 @@ def parameters(cmdargs):
     overlapplot = 0 # Plot overlap
 
     # Output directory stuff
-    probdir = 'data/hopfield_gamma/n'+str(nQubits)+'p'+\
-        str(len(memories))+hparams['learningRule']
+    probdir = 'data/hopfield_gamma_random/'+hparams['learningRule']
     if isinstance(T, collections.Iterable):
         probdir += 'MultiT'
     if os.path.isdir(probdir):
