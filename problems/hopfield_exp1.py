@@ -53,7 +53,7 @@ def parameters(cmdargs):
         
     # Basic simulation params
     nQubits = hparams['numNeurons']
-    T = 15. # sp.arange(0.1, 15, 0.5)
+    T = 1000.0 # sp.arange(0.1, 15, 0.5)
     dt = 0.01*T
 
     # Define states for which to track probabilities in time

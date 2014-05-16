@@ -31,6 +31,38 @@ def lrule2int(lrule):
     if lrule == 'proj':
         return 2
 
+def success1(bstrs, probs, answer, instate):
+    """
+    Success defined by looking at the top two states
+    and making sure if the top one isn't the answer,
+    then it is the input state and the second top
+    answer is the true answer, otherwise failure.
+    """
+    sortidx = np.argsort(probs)[::-1]
+    sorted_bstrs = np.array(bstrs)[sortidx]
+    success = False
+    prob = 0.0
+    if sorted_bstrs[0] == spins2bitstr(answer):
+        success = True
+        prob = probs[sortidx][0]
+    elif ((sorted_bstrs[1] == spins2bitstr(answer)) and 
+          (sorted_bstrs[0] == spins2bitstr(instate))):
+        success = True
+        prob = probs[sortidx][1]
+    return success, prob
+
+def success2(bstrs, probs, answer, instate):
+    """
+    Success only if the top state is the answer.
+    """
+    sortidx = np.argsort(probs)[::-1]
+    sorted_bstrs = np.array(bstrs)[sortidx]
+    success = False
+    prob = probs[sortidx][sorted_bstrs == spins2bitstr(answer)]
+    if sorted_bstrs[0] == spins2bitstr(answer):
+        success = True
+    return success, prob
+
 def analysis(filename, binary):
     """
     Grab the right data when inside a problem instance directory.
@@ -40,9 +72,11 @@ def analysis(filename, binary):
         try:
             probs = np.load(filename)
             eigs = np.load('eigenspectrum.dat.npy')
-        except (IOError, e):
-            print ("IOError: No file "+filename+".npy. \nYou probably forgot "+\
+        except (IOError):
+            print ("IOError: No file "+filename+". \nYou probably forgot "+\
                 "to specify the appropriate command-line argument: -b 0.")
+            print ("Directory:")
+            print (os.getcwd())
             sys.exit(0)
     else:
         probs = np.loadtxt(filename)
@@ -54,7 +88,7 @@ def analysis(filename, binary):
     # Organize the eigenstuff
     times = eigs[:,0]/eigs[-1,0]
     eigs = eigs[:,1:]
-    mgIdx = np.argmax(eigs[:,1]-eigs[:,0])
+    mgIdx = np.argmin(eigs[:,1]-eigs[:,0])
     mingap = eigs[mgIdx,1]-eigs[mgIdx,0]
     mgt = times[mgIdx]
 
@@ -69,22 +103,9 @@ def analysis(filename, binary):
     avgdist = np.average([ hamdist(m, instate) for m in mems ])
     
     # Calculate success
-    sortidx = np.argsort(probs)[::-1]
-    sorted_bstrs = np.array(bstrs)[sortidx]
-    success = False
-    prob = 0.0
-    if sorted_bstrs[0] == spins2bitstr(answer):
-        success = True
-        prob = probs[sortidx][0]
-    elif ((sorted_bstrs[1] == spins2bitstr(answer)) and 
-          (sorted_bstrs[0] == spins2bitstr(instate))):
-        success = True
-        prob = probs[sortidx][1]
-    else:
-        pidx = np.where(sorted_bstrs == spins2bitstr(answer))
-        prob = probs[sortidx][pidx]
+    success, sprob = success2(bstrs, probs, answer, instate)
 
-    return success, avgdist, len(mems), prob, lrule, times, eigs, mingap, mgt
+    return success, avgdist, len(mems), sprob, lrule, times, eigs, mingap, mgt
 
 def getdata(qubits, binary, probsfname):
     """
@@ -220,12 +241,12 @@ if __name__=="__main__":
     ax = fig.add_subplot(4,1,2)
     recIdx = 1
     nbins = 35
-    ax.set_title('Answer probability (log-normed)')
+    ax.set_title('Answer probability (log)')
     rmax = max(successdat[:,recIdx].max(), failuredat[:,recIdx].max())
     rmin = min(successdat[:,recIdx].min(), failuredat[:,recIdx].min())
-    ax.hist(successdat[:,recIdx], nbins, normed=1, alpha=0.25, facecolor='blue', 
+    ax.hist(successdat[:,recIdx], nbins, normed=0, alpha=0.25, facecolor='blue', 
             histtype=htype, label="Successes", log=True, range=(rmin,rmax))
-    ax.hist(failuredat[:,recIdx], nbins, normed=1, alpha=0.25, facecolor='red', 
+    ax.hist(failuredat[:,recIdx], nbins, normed=0, alpha=0.25, facecolor='red', 
             histtype=htype, label="Failures", log=True, range=(rmin,rmax))
     pl.grid()
 
@@ -233,26 +254,26 @@ if __name__=="__main__":
     ax = fig.add_subplot(4,1,3)
     recIdx = 3
     nbins = 15
-    ax.set_title('Minimum Spectral Gap (log-normed)')
+    ax.set_title('Minimum Spectral Gap')
     rmax = max(successdat[:,recIdx].max(), failuredat[:,recIdx].max())
     rmin = min(successdat[:,recIdx].min(), failuredat[:,recIdx].min())
-    ax.hist(successdat[:,recIdx], nbins, normed=1, alpha=0.25, facecolor='blue', 
-            histtype=htype, label="Successes", log=True, range=(rmin,rmax))
-    ax.hist(failuredat[:,recIdx], nbins, normed=1, alpha=0.25, facecolor='red', 
-            histtype=htype, label="Failures", log=True, range=(rmin,rmax))
+    ax.hist(successdat[:,recIdx], nbins, normed=0, alpha=0.25, facecolor='blue', 
+            histtype=htype, label="Successes", log=False, range=(rmin,rmax))
+    ax.hist(failuredat[:,recIdx], nbins, normed=0, alpha=0.25, facecolor='red', 
+            histtype=htype, label="Failures", log=False, range=(rmin,rmax))
     pl.grid()
 
     # Mingap time
     ax = fig.add_subplot(4,1,4)
     recIdx = 4
     nbins = 15
-    ax.set_title('Time of Minimum Spectral Gap (log-normed)')
+    ax.set_title('Time of Minimum Spectral Gap')
     rmax = max(successdat[:,recIdx].max(), failuredat[:,recIdx].max())
     rmin = min(successdat[:,recIdx].min(), failuredat[:,recIdx].min())
-    ax.hist(successdat[:,recIdx], nbins, normed=1, alpha=0.25, facecolor='blue', 
-            histtype=htype, label="Successes", log=True, range=(rmin,rmax))
-    ax.hist(failuredat[:,recIdx], nbins, normed=1, alpha=0.25, facecolor='red', 
-            histtype=htype, label="Failures", log=True, range=(rmin,rmax))
+    ax.hist(successdat[:,recIdx], nbins, normed=0, alpha=0.25, facecolor='blue', 
+            histtype=htype, label="Successes", log=False, range=(rmin,rmax))
+    ax.hist(failuredat[:,recIdx], nbins, normed=0, alpha=0.25, facecolor='red', 
+            histtype=htype, label="Failures", log=False, range=(rmin,rmax))
     pl.grid()
 
     pl.subplots_adjust(hspace=0.5)
