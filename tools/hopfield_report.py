@@ -1,8 +1,8 @@
 '''
-File: hopfield_analysis.py
+File: hopfield_report.py
 Author: Hadayat Seddiqi
 Date: 4.18.14
-Description: Some useful facts about Hopfield simulations.
+Description: Print some useful facts about Hopfield simulations.
 '''
 
 import os, optparse, sys
