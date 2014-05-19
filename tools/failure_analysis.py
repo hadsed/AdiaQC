@@ -389,6 +389,143 @@ if __name__=="__main__":
 
             pl.subplots_adjust(hspace=0.5)
             pl.savefig('failure_analysis_n'+str(qubits)+'_'+lr+'.png')
+    elif separate == 3:
+        # Build data list based on number of patterns
+        sdat = successdat[successdat[:,5].argsort()]
+        fdat = failuredat[failuredat[:,5].argsort()]
+        # sdat = sorted(successdat, key=lambda x: int(x[5]))
+        # fdat = sorted(failuredat, key=lambda x: int(x[5]))
+        # zsdat = list(zip(*sdat))
+        # zfdat = list(zip(*fdat))
+        # sdat = np.matrix(sdat)
+        # fdat = np.matrix(fdat)
+
+        # Make them into nice paired bounds
+        sbounds = []
+        fbounds = []
+        for k in range(2, qubits):
+            s = np.where(sdat[:,5] == k)[0][0]
+            e = np.where(sdat[:,5] == k+1)[0][0]
+            sbounds.append((s,e))
+            s = np.where(fdat[:,5] == k)[0][0]
+            e = np.where(fdat[:,5] == k+1)[0][0]
+            fbounds.append((s,e))
+
+        # sbounds = [ (zsdat[5].index(k), zsdat[5].index(k+1))
+        #             for k in range(2,qubits) ]
+        # fbounds = [ (zfdat[5].index(k), zfdat[5].index(k+1)) 
+        #             for k in range(2,qubits) ]
+        # sbounds.append((zsdat[5].index(qubits), len(zsdat[5])))
+        # fbounds.append((zfdat[5].index(qubits), len(zfdat[5])))
+        # Loop over pattern numbers
+        for pidx in range(len(sbounds)):
+            # Array bounds for particular number of patterns
+            starts, ends = sbounds[pidx]
+            startf, endf = fbounds[pidx]
+            # Now sort those blocks according to learning rule
+            temp_sdata = sdat[starts:ends][sdat[starts:ends][:,2].argsort()]
+            temp_fdata = fdat[startf:endf][fdat[startf:endf][:,2].argsort()]
+            # Indices (success)
+            i1 = np.where(temp_sdata[:,2] == 1)[0][0]
+            i2 = np.where(temp_sdata[:,2] == 2)[0][0]
+            slrIdx = [(0, i1), (i1, i2), (i2, len(temp_sdata))]
+            # Indices (failed)
+            i1 = np.where(temp_fdata[:,2] == 1)[0][0]
+            i2 = np.where(temp_fdata[:,2] == 2)[0][0]
+            flrIdx = [(0, i1), (i1, i2), (i2, len(temp_fdata))]
+            # Now loop over different learning rules
+            for lridx in range(len(slrIdx)):
+                startsLR, endsLR = slrIdx[lridx]
+                startfLR, endfLR = flrIdx[lridx]
+                lrule = ''
+                if lridx == 0:
+                    lrule = 'hebb'
+                elif lridx == 1:
+                    lrule = 'stork'
+                elif lridx == 2:
+                    lrule = 'proj'
+
+                # Bar graphs
+                width = 0.1
+                htype = 'bar'
+                fontsize = 16
+                fig = pl.figure(figsize=(8,8))
+                fig.suptitle('Failure Analysis: '+str(qubits)+' qubits, '+
+                             str(pidx+2)+' patterns, '+lrule,
+                             fontsize=fontsize, fontweight='bold')
+
+                # Hamming distances
+                ax = fig.add_subplot(4,1,1)
+                recIdx = 0
+                nbins = 15
+                ax.set_title('Average Hamming distance')
+                rmax = max(sdat[starts+startsLR:ends+endsLR][:,recIdx].max(), 
+                           fdat[startf+startfLR:endf+endfLR][:,recIdx].max())
+                rmin = min(sdat[starts+startsLR:ends+endsLR][:,recIdx].min(), 
+                           fdat[startf+startfLR:endf+endfLR][:,recIdx].min())
+                ax.hist(sdat[starts+startsLR:ends+endsLR][:,recIdx], nbins, normed=0, alpha=0.25, 
+                        facecolor='blue', histtype=htype, label="Successes", 
+                        range=(rmin,rmax))
+                ax.hist(fdat[startf+startfLR:endf+endfLR][:,recIdx], nbins, normed=0, alpha=0.25, 
+                        facecolor='red', histtype=htype, label="Failures", 
+                        range=(rmin,rmax))
+                pl.grid()
+                pl.legend(prop={'size':8})
+
+                # Answer probabilities
+                ax = fig.add_subplot(4,1,2)
+                recIdx = 1
+                nbins = 35
+                ax.set_title('Answer probability (log)')
+                rmax = max(sdat[starts+startsLR:ends+endsLR][:,recIdx].max(), 
+                           fdat[startf+startfLR:endf+endfLR][:,recIdx].max())
+                rmin = min(sdat[starts+startsLR:ends+endsLR][:,recIdx].min(), 
+                           fdat[startf+startfLR:endf+endfLR][:,recIdx].min())
+                ax.hist(sdat[starts+startsLR:ends+endsLR][:,recIdx], nbins, normed=0, alpha=0.25, 
+                        facecolor='blue', histtype=htype, label="Successes", 
+                        log=True, range=(rmin,rmax))
+                ax.hist(fdat[startf+startfLR:endf+endfLR][:,recIdx], nbins, normed=0, alpha=0.25, 
+                        facecolor='red', histtype=htype, label="Failures", 
+                        log=True, range=(rmin,rmax))
+                pl.grid()
+
+                # Mingap
+                ax = fig.add_subplot(4,1,3)
+                recIdx = 3
+                nbins = 15
+                ax.set_title('Minimum Spectral Gap')
+                rmax = max(sdat[starts+startsLR:ends+endsLR][:,recIdx].max(), 
+                           fdat[startf+startfLR:endf+endfLR][:,recIdx].max())
+                rmin = min(sdat[starts+startsLR:ends+endsLR][:,recIdx].min(), 
+                           fdat[startf+startfLR:endf+endfLR][:,recIdx].min())
+                ax.hist(sdat[starts+startsLR:ends+endsLR][:,recIdx], nbins, normed=0, alpha=0.25, 
+                        facecolor='blue', histtype=htype, label="Successes", 
+                        log=False, range=(rmin,rmax))
+                ax.hist(fdat[startf+startfLR:endf+endfLR][:,recIdx], nbins, normed=0, alpha=0.25, 
+                        facecolor='red', histtype=htype, label="Failures", 
+                        log=False, range=(rmin,rmax))
+                pl.grid()
+
+                # Mingap time
+                ax = fig.add_subplot(4,1,4)
+                recIdx = 4
+                nbins = 15
+                ax.set_title('Time of Minimum Spectral Gap')
+                rmax = max(sdat[starts+startsLR:ends+endsLR][:,recIdx].max(), 
+                           fdat[startf+startfLR:endf+endfLR][:,recIdx].max())
+                rmin = min(sdat[starts+startsLR:ends+endsLR][:,recIdx].min(), 
+                           fdat[startf+startfLR:endf+endfLR][:,recIdx].min())
+                ax.hist(sdat[starts+startsLR:ends+endsLR][:,recIdx], nbins, normed=0, alpha=0.25, 
+                        facecolor='blue', histtype=htype, label="Successes", 
+                        log=False, range=(rmin,rmax))
+                ax.hist(fdat[startf+startfLR:endf+endfLR][:,recIdx], nbins, normed=0, alpha=0.25, 
+                        facecolor='red', histtype=htype, label="Failures", 
+                        log=False, range=(rmin,rmax))
+                pl.grid()
+
+                pl.subplots_adjust(hspace=0.5)
+                pl.savefig('failure_analysis_n'+str(qubits)+'p'+str(pidx+2)+
+                           '_'+lrule+'.png')
     elif separate == 0:
         # Put everything on one graph
 
