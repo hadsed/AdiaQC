@@ -393,13 +393,6 @@ if __name__=="__main__":
         # Build data list based on number of patterns
         sdat = successdat[successdat[:,5].argsort()]
         fdat = failuredat[failuredat[:,5].argsort()]
-        # sdat = sorted(successdat, key=lambda x: int(x[5]))
-        # fdat = sorted(failuredat, key=lambda x: int(x[5]))
-        # zsdat = list(zip(*sdat))
-        # zfdat = list(zip(*fdat))
-        # sdat = np.matrix(sdat)
-        # fdat = np.matrix(fdat)
-
         # Make them into nice paired bounds
         sbounds = []
         fbounds = []
@@ -410,13 +403,8 @@ if __name__=="__main__":
             s = np.where(fdat[:,5] == k)[0][0]
             e = np.where(fdat[:,5] == k+1)[0][0]
             fbounds.append((s,e))
-
-        # sbounds = [ (zsdat[5].index(k), zsdat[5].index(k+1))
-        #             for k in range(2,qubits) ]
-        # fbounds = [ (zfdat[5].index(k), zfdat[5].index(k+1)) 
-        #             for k in range(2,qubits) ]
-        # sbounds.append((zsdat[5].index(qubits), len(zsdat[5])))
-        # fbounds.append((zfdat[5].index(qubits), len(zfdat[5])))
+        sbounds.append((sbounds[-1][1], len(sdat)))
+        fbounds.append((fbounds[-1][1], len(fdat)))
         # Loop over pattern numbers
         for pidx in range(len(sbounds)):
             # Array bounds for particular number of patterns
