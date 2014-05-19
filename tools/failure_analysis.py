@@ -198,8 +198,8 @@ if __name__=="__main__":
         # Build data list based on number of patterns
         sdat = sorted(successdat, key=lambda x: int(x[5]))
         fdat = sorted(failuredat, key=lambda x: int(x[5]))
-        zsdat = zip(*sdat)
-        zfdat = zip(*fdat)
+        zsdat = list(zip(*sdat))
+        zfdat = list(zip(*fdat))
         sdat = np.matrix(sdat)
         fdat = np.matrix(fdat)
         # Make them into nice paired bounds
@@ -293,7 +293,7 @@ if __name__=="__main__":
             pl.grid()
 
             pl.subplots_adjust(hspace=0.5)
-            pl.savefig('failure_analysis_n'+str(qubits)+'p'+str(pidx+1)+'.png')
+            pl.savefig('failure_analysis_n'+str(qubits)+'p'+str(pidx+2)+'.png')
     elif separate == 2:
         # Build data list based on learning rule
         successdat = sorted(successdat, key=lambda x: int(x[2]))
@@ -303,14 +303,18 @@ if __name__=="__main__":
         for row in successdat:
             if row[2] == 0:
                 sdat['hebb'].append(row)
-                fdat['hebb'].append(row)
             elif row[2] == 1:
                 sdat['stork'].append(row)
-                fdat['stork'].append(row)
             else:
                 sdat['proj'].append(row)
+        for row in failuredat:
+            if row[2] == 0:
+                fdat['hebb'].append(row)
+            elif row[2] == 1:
+                fdat['stork'].append(row)
+            else:
                 fdat['proj'].append(row)
-        for k,v in sdat.iteritems():
+        for k,v in sdat.items():
             sdat[k] = np.matrix(sdat[k])
             fdat[k] = np.matrix(fdat[k])
         for lr in ['hebb', 'stork', 'proj']:
