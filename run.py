@@ -40,6 +40,9 @@ if __name__=="__main__":
     parser.add_option("-f", "--farg", dest="farg", default=None,
                       type="string", 
                       help="Just another parameter, if needed.")
+    parser.add_option("-g", "--garg", dest="garg", default=None,
+                      type="string", 
+                      help="Just another parameter, if needed.")
     (options, args) = parser.parse_args()
     problem = options.problem
     relpath = options.relpath
@@ -47,6 +50,7 @@ if __name__=="__main__":
     simtype = options.simtype
     qubits = options.qubits
     farg = options.farg
+    garg = options.garg
 
 # Clean up the problem path
 problemClean = problem.replace('/', '.')
@@ -74,7 +78,8 @@ cmdargs = {'problem': problem,
            'instance': instance,
            'simtype': simtype,
            'qubits': qubits,
-           'farg': farg}
+           'farg': farg,
+           'garg': garg}
 params = fparams.parameters(cmdargs)
 
 # Create data directory
@@ -178,9 +183,9 @@ hz *= isingSigns['hz']
 hzz *= isingSigns['hzz']
 hx *= isingSigns['hx']
 
-if outinfo['probshow']:
-    print ("Initial state:")
-    print (Psi0)
+# if outinfo['probshow']:
+#     print ("Initial state:")
+#     print (Psi0)
 
 # Determine if we're doing multiple simulations over T
 if isinstance(T, collections.Iterable):

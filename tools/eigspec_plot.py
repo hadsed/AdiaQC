@@ -22,10 +22,14 @@ if __name__=="__main__":
     parser.add_option("-e", "--eignum", dest="eignum", default=None,
                       type="int", 
                       help="Number of eigenvalues to plot (from smallest).")
+    parser.add_option("-t", "--title", dest="title", default="Eigenspectrum",
+                      type="string", 
+                      help="Title for the graph.")
     (options, args) = parser.parse_args()
     binary = options.binary
     filename = options.filename
     eignum = options.eignum
+    title = options.title
 
 # Get data
 if binary:
@@ -46,7 +50,7 @@ if not eignum:
 for col in xrange(eignum):
     pl.plot(time, eigs[:,col])
 
-pl.title('Eigenspectrum')
+pl.title(title)
 pl.xlabel('Time')
 pl.ylabel('Energy')
 if filename is None:

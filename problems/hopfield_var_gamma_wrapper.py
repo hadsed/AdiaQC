@@ -3,6 +3,7 @@ Run hopfield_var_gamma.py using subprocesses.
 """
 
 import subprocess, os, time, optparse
+import numpy as np
 
 # Command line options
 if __name__=="__main__":
@@ -44,7 +45,7 @@ python = "python2"
 hop = "hopfield_var_gamma"
 
 # Gamma grid
-gamma_grid = [ 0.01, 0.05, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0 ]
+gamma_grid = np.arange(0.0, 2.0, 0.05)
 
 devnull = open('/dev/null', 'w')
 

@@ -23,26 +23,32 @@ def parameters(cmdargs):
     # The Hopfield parameters
     hparams = {
         'numNeurons': 5,
-        'inputState': [1,1,-1,1,-1],
+        'inputState': [1,1,1,1,1],
         'learningRule': cmdargs['simtype'],
         'bias': float(cmdargs['farg'])
         }
 
     # Construct memories
-    memories = [ [1,1,1,1,-1],
-                 [-1,1,-1,-1,1],
-                 [1,-1,-1,1,1],
-                 [-1,-1,-1,1,-1],
-                 [-1,1,-1,-1,-1],
-                 [-1,-1,-1,-1,-1] ]
+    memories = [[1,1,1,1,-1]]
+    # memories = [[1, -1, 1, -1, 1], 
+    #             [-1, -1, -1, 1, -1], 
+    #             [-1, 1, 1, -1, -1], 
+    #             [-1, 1, -1, -1, -1], 
+    #             [1, 1, 1, -1, 1]]
+    # memories = [ [1,1,1,1,-1],
+    #              [-1,1,-1,-1,1],
+    #              [1,-1,-1,1,1],
+    #              [-1,-1,-1,1,-1],
+    #              # [-1,1,-1,-1,-1],
+    #              [-1,-1,-1,-1,-1] ]
 
     # Basic simulation params
     nQubits = hparams['numNeurons']
-    T = 100.0
+    T = 1000.0
     dt = 0.01*T
 
     # Output parameters
-    binary = 1 # Save output files as binary Numpy format
+    binary = 0 # Save output files as binary Numpy format
     progressout = 0 # Output simulation progress over anneal timesteps
 
     eigspecdat = 1 # Output data for eigspec

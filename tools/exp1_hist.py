@@ -27,11 +27,15 @@ if __name__=="__main__":
     parser.add_option("-q", "--qubits", dest="qubits", default=None,
                       type="int", 
                       help="Number of qubits/neurons.")
+    parser.add_option("-s", "--successtype", dest="stype", default=1,
+                      type="int", 
+                      help="Use top [s] states to calculate success (1 or 2).")
     (options, args) = parser.parse_args()
     probsfname = options.probsfname
     output = options.output
     binary = options.binary
     qubits = options.qubits
+    stype = options.stype
 
 def spins2bitstr(vec):
     """ Return a converted bitstring from @vec, a list of spins. """
@@ -73,7 +77,7 @@ def success2(bstrs, probs, answer, instate):
         success = True
     return success, prob
 
-def analysis(filename, binary):
+def analysis(filename, binary, stype):
     """
     """
     # Get probability data
@@ -95,8 +99,13 @@ def analysis(filename, binary):
     avgdist = np.average([ hamdist(m, instate) for m in mems ])
     
     # Calculate success
-    success, sprob = success2(bstrs, probs, answer, instate)
-
+    if stype == 1:
+        success, sprob = success2(bstrs, probs, answer, instate)
+    elif stype == 2:
+        success, sprob = success1(bstrs, probs, answer, instate)
+    else:
+        print("Invalid -s flag, must be 1 or 2. Exiting.")
+        sys.exit(0)
     return success, avgdist, len(mems), sprob, lrule
 
 # Initialize some variables we'll want to look at
@@ -118,14 +127,12 @@ for root, dirs, files in os.walk('.'):
         (probsfname in files)):
         os.chdir(root)
         try:
-            success, dist, kmems, prob, lrule = analysis(probsfname, binary)
+            success, dist, kmems, prob, lrule = analysis(probsfname, binary, stype)
         except IOError, e:
             print "\nFailure on: " + root
             print e
             continue
         data.append([ success, dist, kmems, prob, lrule ])
-        # pl.scatter(kmems, dist, c=('r' if success is False else 'b'), marker='x')
-        # pl.scatter(kmems, prob, c=('r' if success is False else 'b'), marker='x')
         if success:
             csuccess[lrule][kmems-1] += 1
         else:

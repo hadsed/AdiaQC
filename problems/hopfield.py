@@ -12,7 +12,7 @@ import scipy as sp
 def parameters(cmdargs):
     """
     """
-    nQubits = 5
+    nQubits = 4
     T = 100.0
     #T = sp.arange(2,23,4.0) # Output a sequence of anneal times
     dt = 0.01*T
@@ -23,7 +23,7 @@ def parameters(cmdargs):
 
     outputdir = 'data/hopfield/' # In relation to run.py
     eigspecdat = 1 # Output data for eigspec
-    eigspecplot = 1 # Plot eigspec
+    eigspecplot = 0 # Plot eigspec
     eigspecnum = 2**nQubits # Number of eigenvalues to output
     fidelplot = 0 # Plot fidelity
     fideldat = 0 # Output fidelity data
@@ -44,31 +44,58 @@ def parameters(cmdargs):
     isingConvert = 0
     isingSigns = {'hx': -1, 'hz': -1, 'hzz': -1}
 
+    def spins2bitstr(vec):
+        """ Return a converted bitstring from @vec, a list of spins. """
+        return ''.join([ '0' if k == 1 else '1' for k in vec ])
+
     # Construct network Ising parameters
     neurons = nQubits
-    # memories = [ [1,1,1,1,1], [-1,1,-1,1,1], [1,-1,1,-1,-1] ]
-    # inputstate = [1,1,-1,1,1]
-    memories = [ [1,1,1,1,-1],
-                 [-1,1,1,-1,-1] ]
-    inputstate = [1,1,-1,1,-1]
+    memories = [[1,-1,1,1,-1],
+                [-1,1,-1,1,1],
+                [1,1,-1,-1,-1]]
+    inputstate = [1,1,-1,1,1]
 
+    memories = list(sp.linalg.hadamard(nQubits))
+    memories = memories[0:2]
+
+    print("Input:")
+    print(spins2bitstr(inputstate))
+    print('')
+    print("Memories:")
+    for mem in memories:
+        print(spins2bitstr(mem))
+    print('')
+          
     # This is gamma, the appropriate weighting on the input vector
     # isingSigns['hz'] *= 1 - (len(inputstate) - inputstate.count(0))/(2*neurons)
-    isingSigns['hz'] *= 0.05
+    isingSigns['hz'] *= 0.0
+    print("Gamma: ", isingSigns['hz'])
+    print('')
 
     alpha = sp.array(inputstate)
     beta = sp.zeros((neurons,neurons))
     delta = sp.array([])
 
-    # Construct pattern matrix according to the Hebb learning rule
-    for i in range(neurons):
-        for j in range(neurons):
-            for p in range(len(memories)):
-                beta[i,j] += ( memories[p][i]*memories[p][j] -
-                               len(memories)*(i == j) )
-    beta = sp.triu(beta)/float(neurons)
+    # Hebb rule - even better matrix style
+    memMat = sp.matrix(memories).T
+    beta = sp.triu(memMat*memMat.T)/float(neurons)
 
-    # Construct the memory matrix according to the Storkey learning rule
+    # # Hebb rule - matrix style
+    # for m, mem in enumerate(memories):
+    #     beta += (sp.outer(mem, mem))-sp.eye(neurons)
+    # beta = sp.triu(beta)/float(neurons)
+
+    # beta = sp.zeros((neurons,neurons))
+
+    # # Construct pattern matrix according to the Hebb learning rule
+    # for i in range(neurons):
+    #     for j in range(neurons):
+    #         for p in range(len(memories)):
+    #             beta[i,j] += ( memories[p][i]*memories[p][j] -
+    #                            len(memories)*(i == j) )
+    # beta = sp.triu(beta)/float(neurons)
+
+    # Storkey rule (incorrect, but may be useful later)
     # memMat = sp.zeros((neurons,neurons))
     # for m, mem in enumerate(memories):
     #     for i in range(neurons):
@@ -76,9 +103,15 @@ def parameters(cmdargs):
     #             hij = sp.sum([ memMat[i,k]*mem[k] for k in range(neurons) ])
     #             hji = sp.sum([ memMat[j,k]*mem[k] for k in range(neurons) ])
     #             # Don't forget to make the normalization a float!
-    #             memMat[i,j] += 1./neurons*(mem[i]*mem[j] - mem[i]*hji - 
-    #                                        hij*mem[j])
+    #             memMat[i,j] += (mem[i]*mem[j] - mem[i]*hji - hij*mem[j])/float(neurons)
     # beta = sp.triu(memMat)
+
+    # Storkey rule
+    Wm = sp.zeros((neurons,neurons))
+    for m, mem in enumerate(memories):
+        Am = sp.mat((sp.outer(mem,mem) - sp.eye(neurons)))
+        Wm += (Am - Am*Wm - Wm*Am)/float(neurons)
+    beta = sp.triu(Wm)
 
     # Construct memory matrix according to the Moore-Penrose pseudoinverse rule
     # memMat = sp.matrix(memories).T

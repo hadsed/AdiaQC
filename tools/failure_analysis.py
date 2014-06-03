@@ -464,17 +464,17 @@ if __name__=="__main__":
                 ax = fig.add_subplot(4,1,2)
                 recIdx = 1
                 nbins = 35
-                ax.set_title('Answer probability (log)')
+                ax.set_title('Answer probability')
                 rmax = max(sdat[starts+startsLR:ends+endsLR][:,recIdx].max(), 
                            fdat[startf+startfLR:endf+endfLR][:,recIdx].max())
                 rmin = min(sdat[starts+startsLR:ends+endsLR][:,recIdx].min(), 
                            fdat[startf+startfLR:endf+endfLR][:,recIdx].min())
                 ax.hist(sdat[starts+startsLR:ends+endsLR][:,recIdx], nbins, normed=0, alpha=0.25, 
                         facecolor='blue', histtype=htype, label="Successes", 
-                        log=True, range=(rmin,rmax))
+                        log=False, range=(rmin,rmax))
                 ax.hist(fdat[startf+startfLR:endf+endfLR][:,recIdx], nbins, normed=0, alpha=0.25, 
                         facecolor='red', histtype=htype, label="Failures", 
-                        log=True, range=(rmin,rmax))
+                        log=False, range=(rmin,rmax))
                 pl.grid()
 
                 # Mingap
