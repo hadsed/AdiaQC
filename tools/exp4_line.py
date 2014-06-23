@@ -89,6 +89,9 @@ if __name__=="__main__":
     parser.add_option("-g", "--getdata", dest="getdata", default=0,
                       type="int", 
                       help="Do we need to get the success/failure data.")
+    parser.add_option("-d", "--hdist", dest="hdist", default=1,
+                      type="int", 
+                      help="Only affects filenaming (which Hamming distance did we use).")
     parser.add_option("-l", "--lrule", dest="lrule", default=0,
                       type="int", 
                       help="Learning rule to plot (0: all, 1: hebb, 2: stork, 3: proj).")
@@ -101,6 +104,7 @@ if __name__=="__main__":
     binary = options.binary
     probsfname = options.fname
     getdataopt = options.getdata
+    hdist = options.hdist
     lrule = options.lrule
     nsamples = options.nsamples
 
@@ -144,85 +148,53 @@ if __name__=="__main__":
                 os.chdir('../')
 
         # Save
-        pickle.dump(data, open('exp4_line_data_n'+str(qubits)+'.pk', 'w'))
+        pickle.dump(data, open('exp4_line_data_n'+str(qubits)+'_hd'+str(hdist)+'.pk', 'w'))
         print("Exiting. Run with -g 0 to get the plots.")
     else:
         # Load data
-        data = pickle.load(open('exp4_line_data_n'+str(qubits)+'.pk', 'r'))
-
-        pl.rc('text', usetex=True)
-        pl.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
-        lwidth = 1.8
+        data = pickle.load(open('exp4_line_data_n'+str(qubits)+'_hd'+str(hdist)+'.pk', 'r'))
+        # Plot settings
+        lwidth = 2.5
         lstyle = '-'
-        marker = '.'
-        msize = 6
-        color = ['black', 'blue', 'green', 'orange', 'red']
-
-        if lrule == 0:
-            # Create figure
-            fig, (ax1, ax2, ax3) = pl.subplots(1, 3, sharey=True, figsize=(20,9))
-            fig.subplots_adjust(wspace=0.05, left=0.05, right=0.95, bottom=0.15)
-            # fig.suptitle(r'$\textbf{Fractional success as a function of input bias'+\
-            #              ' (N = '+str(qubits)+')}$', fontsize=18)
-            pl.ylim([0.0,1.05])
-            # Hebb
-            ax1.set_title('Hebb')
-            ax1.set_ylabel(r'$\langle f_x \rangle$', fontsize=24, rotation='horizontal')
-            ax1.set_xlim([-0.05, 2.05])
-            for pnum in range(qubits):
-                ax1.plot(gammarng, np.array(data['hebb'][pnum])/nsamples, lstyle, 
-                         c=color[pnum], linewidth=lwidth, label=str(pnum+1)+' patterns', 
-                         marker=marker, markersize=msize)
-            # Stork
-            ax2.set_title('Stork')
-            ax2.set_xlabel(r'$\boldsymbol{\Gamma}$', fontsize=20)
-            ax2.set_xlim([-0.05, 2.05])
-            for pnum in range(qubits):
-                ax2.plot(gammarng, np.array(data['stork'][pnum])/nsamples, lstyle, 
-                         c=color[pnum], linewidth=lwidth, label=str(pnum+1)+' patterns', 
-                         marker=marker, markersize=msize)
-            # Proj
-            ax3.set_title('Proj')
-            ax3.set_xlim([-0.05, 2.05])
-            for pnum in range(qubits):
-                ax3.plot(gammarng, np.array(data['proj'][pnum])/nsamples, lstyle, 
-                         c=color[pnum], linewidth=lwidth, label=str(pnum+1)+' patterns', 
-                         marker=marker, markersize=msize)
-            pl.legend(prop={'size':12})
-            # pl.show()
-            pl.savefig('exp4_line_n'+str(qubits)+'.png')
-        else:
-            if lrule == 1:
-                lrule = 'hebb'
-            elif lrule == 2:
-                lrule = 'stork'
-            elif lrule == 3:
-                lrule = 'proj'
-            else:
-                print("Learning rule number not recognized (0: all,"+
-                      "1: hebb, 2: stork, 3: proj).")
-                sys.exit(0)
-            pl.rcParams['figure.figsize'] = 9,6
-            pl.title(r'$\textbf{Fractional success as a function of input bias'+\
-                         ' (N = '+str(qubits)+'), '+lrule+'}$', fontsize=18)
-            pl.xlabel(r'$\boldsymbol{\Gamma}$', fontsize=20)
-            pl.ylabel(r'$\langle f_x \rangle$', fontsize=24)#, rotation='horizontal')
-            pl.ylim([0.0, 1.05])
-            pl.xlim([-0.05, 2.05])
-            for pnum in range(qubits):
-            # for pnum in [3]:
-                fx = data[lrule][pnum]
-                fxavg = np.average(fx, axis=1)
-                yerr = np.average(fx**2, axis=1) - fxavg**2
-                # print yerr == fx.std(1)
-                print gammarng[np.argmax(fxavg)]
-                # Do the error margins
-                # pl.errorbar(gammarng, fxavg, marker=marker, markersize=msize,
-                #             linewidth=lwidth, yerr=yerr, color='grey')
-                # Plot with some color
-                pl.plot(gammarng, fxavg, c=color[pnum],
-                        label=str(pnum+1)+' patterns', marker=marker, markersize=msize,
-                        linewidth=lwidth)
-            pl.legend(prop={'size':12})
-            pl.show()
-            pl.savefig('var_gamma_n'+str(qubits)+'_'+lrule+'.png')
+        marker = 'o'
+        msize = 3
+        pl.rcParams['xtick.major.pad'] = 8
+        pl.rcParams['ytick.major.pad'] = 8
+        pl.rcParams['xtick.labelsize'] = 24
+        pl.rcParams['ytick.labelsize'] = 24
+        pl.rc('text', usetex=True)
+        pl.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]
+        colors = ['black', 'blue', 'green', 'orange', 'red']*2
+        # Create figure
+        fig, (ax1, ax2, ax3) = pl.subplots(1, 3, sharey=True, figsize=(24,11))
+        fig.subplots_adjust(wspace=0.05, left=0.05, right=0.95, bottom=0.15)
+        # Hebb
+        ax1.set_title('Hebb', fontsize=24)
+        ax1.set_ylabel(r'$\textbf{Input State Count}$', fontsize=24)
+        ax1.yaxis.set_label_coords(-0.1, 0.45)
+        # ax1.set_ylim([0.0, 1.05])
+        for pnum in range(qubits):
+            ax1.plot(gammarng, np.array(data['hebb'][pnum])/nsamples, lstyle, 
+                     c=colors[pnum], linewidth=lwidth,
+                     marker=marker, markersize=msize)
+        # Stork
+        ax2.set_title('Storkey', fontsize=24)
+        ax2.set_xlabel(r'$\mathbf{\Gamma}$', fontsize=24)
+        for pnum in range(qubits):
+            ax2.plot(gammarng, np.array(data['stork'][pnum])/nsamples, lstyle, 
+                     c=colors[pnum], linewidth=lwidth, 
+                     label=str(pnum)+" patterns",
+                     marker=marker, markersize=msize)
+        # Proj
+        ax3.set_title('Projection', fontsize=24)
+        for pnum in range(qubits):
+            ax3.plot(gammarng, np.array(data['proj'][pnum])/nsamples, lstyle, 
+                     c=colors[pnum], linewidth=lwidth, 
+                     marker=marker, markersize=msize)
+        # ax2.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., prop={'size':12})
+        # ax2.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
+        #           ncol=4, mode="expand", borderaxespad=0.)
+        ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),
+                   fancybox=True, shadow=True, ncol=10)
+        # pl.show()
+        pl.savefig('exp4_line_n'+str(qubits)+'_hd'+str(hdist)+'.png')
