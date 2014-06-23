@@ -110,7 +110,7 @@ if __name__=="__main__":
 
     # This needs to be hardcoded for now
     # gammarng = [ 0.01, 0.05, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0 ]
-    gammarng = np.arange(0.0, 2.0, 0.05)
+    gammarng = np.arange(0.0, 1.0, 0.05)
     lengamma = len(gammarng)
 
     if getdataopt:
@@ -170,25 +170,25 @@ if __name__=="__main__":
         fig.subplots_adjust(wspace=0.05, left=0.05, right=0.95, bottom=0.15)
         # Hebb
         ax1.set_title('Hebb', fontsize=24)
-        ax1.set_ylabel(r'$\textbf{Input State Count}$', fontsize=24)
+        ax1.set_ylabel(r'$\textbf{Failure Probability}$', fontsize=24)
         ax1.yaxis.set_label_coords(-0.1, 0.45)
-        # ax1.set_ylim([0.0, 1.05])
+        ax1.set_ylim([0.0, 1.05])
         for pnum in range(qubits):
-            ax1.plot(gammarng, np.array(data['hebb'][pnum])/nsamples, lstyle, 
+            ax1.plot(gammarng, np.sum(data['hebb'][pnum], axis=1)/nsamples, lstyle, 
                      c=colors[pnum], linewidth=lwidth,
                      marker=marker, markersize=msize)
         # Stork
         ax2.set_title('Storkey', fontsize=24)
         ax2.set_xlabel(r'$\mathbf{\Gamma}$', fontsize=24)
         for pnum in range(qubits):
-            ax2.plot(gammarng, np.array(data['stork'][pnum])/nsamples, lstyle, 
+            ax2.plot(gammarng, np.sum(data['stork'][pnum], axis=1)/nsamples, lstyle, 
                      c=colors[pnum], linewidth=lwidth, 
-                     label=str(pnum)+" patterns",
+                     label=str(pnum+1)+" patterns",
                      marker=marker, markersize=msize)
         # Proj
         ax3.set_title('Projection', fontsize=24)
         for pnum in range(qubits):
-            ax3.plot(gammarng, np.array(data['proj'][pnum])/nsamples, lstyle, 
+            ax3.plot(gammarng, np.sum(data['proj'][pnum], axis=1)/nsamples, lstyle, 
                      c=colors[pnum], linewidth=lwidth, 
                      marker=marker, markersize=msize)
         # ax2.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., prop={'size':12})

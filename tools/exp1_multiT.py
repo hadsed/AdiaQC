@@ -98,7 +98,11 @@ if __name__=="__main__":
     nsamples = options.nsamples
 
     # Which T's
-    tset = [10.0, 20.0, 50.0, 100.0, 1000.0]
+    # tset = [10.0, 20.0, 50.0, 100.0, 1000.0]
+    # tset = [10.0, 20.0, 50.0, 100.0, 1000.0, 
+    #         500.0, 5000.0, 10000.0, 50000.0]
+    tset = [10.0, 20.0, 50.0, 100.0, 500.0,
+            1000.0, 5000.0, 10000.0, 50000.0]
     probsfname = "probsT100.0"
     psuff = ".dat.npy" if binary else ".dat"
 
@@ -163,6 +167,7 @@ if __name__=="__main__":
         ax1.set_ylabel(r'$\langle f_x \rangle$', fontsize=24, rotation='horizontal')
         ax1.yaxis.set_label_coords(-0.1, 0.45)
         ax1.set_xlim([1-0.05,qubits+0.05])
+        ax1.set_ylim([0.0,1.05])
         ax1.set_xticks(range(1,qubits+1))
         # ax1.set_ylim([0.0, 1.05])
         for sdidx, subdict in enumerate(data):
@@ -173,6 +178,7 @@ if __name__=="__main__":
         ax2.set_title('Storkey', fontsize=24)
         ax2.set_xlabel(r'$\textbf{P}$', fontsize=24)
         ax2.set_xlim([1-0.05,qubits+0.05])
+        ax1.set_ylim([0.0,1.05])
         ax2.set_xticks(range(1,qubits+1))
         for sdidx, subdict in enumerate(data):
             ax2.plot(prng, np.array(subdict['stork'])/nsamples, lstyle, 
@@ -182,9 +188,10 @@ if __name__=="__main__":
         # Proj
         ax3.set_title('Projection', fontsize=24)
         ax3.set_xlim([1-0.05,qubits+0.05])
+        ax1.set_ylim([0.0,1.05])
         ax3.set_xticks(range(1,qubits+1))
         for sdidx, subdict in enumerate(data):
-            ax3.plot(prng, np.array(subdict['stork'])/nsamples, lstyle, 
+            ax3.plot(prng, np.array(subdict['proj'])/nsamples, lstyle, 
                      c=colors[sdidx], linewidth=lwidth, 
                      label="T = "+str(tset[sdidx]),
                      marker=marker, markersize=msize)

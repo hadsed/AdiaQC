@@ -128,29 +128,42 @@ if __name__=="__main__":
         # Load data
         data = pickle.load(open('success_line_n'+str(qubits)+'.pk', 'r'))
         prng = np.arange(qubits)+1
- 
-        # Create figure
-        lwidth = 1.5
+        # Plot settings
+        lwidth = 2.5
         lstyle = '-'
         marker = 'o'
         msize = 3
+        pl.rcParams['xtick.major.pad'] = 8
+        pl.rcParams['ytick.major.pad'] = 8
+        pl.rcParams['xtick.labelsize'] = 24
+        pl.rcParams['ytick.labelsize'] = 24
         pl.rc('text', usetex=True)
-        pl.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
-        pl.title(r'$\textbf{Fractional success as a function of pattern '+\
-                     'number (N = '+str(qubits)+')}$', fontsize=14)
-        pl.xlabel(r'$\textbf{Number of patterns}$', fontsize=13)
-        pl.ylabel(r'$\langle f_x \rangle$', fontsize=18, rotation='horizontal')
-        pl.xticks(range(1,qubits+1))
-        pl.ylim([0.0, 1.05])
-        pl.plot(prng, np.array(data['hebb'])/nsamples, lstyle, c='r',
-                linewidth=lwidth, label='hebb',
+        pl.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]
+        colors = ['black', 'blue', 'green', 'orange', 'red']*2
+        # Create figure
+        fig, ax = pl.subplots(figsize=(10,8))
+        fig.subplots_adjust(wspace=0.05, bottom=0.18)
+        # Hebb
+        ax.set_ylabel(r'$\langle f_x \rangle$', fontsize=24, rotation='horizontal')
+        ax.yaxis.set_label_coords(-0.1, 0.45)
+        ax.set_ylim([0.0, 1.05])
+        ax.set_xticks(range(1,qubits+1))
+        ax.set_xlabel(r'$\textbf{P}$', fontsize=24)
+        ax.plot(prng, np.array(data['hebb'])/nsamples, lstyle, 
+                c='r', linewidth=lwidth, label='Hebb',
                 marker=marker, markersize=msize)
-        pl.plot(prng, np.array(data['stork'])/nsamples, lstyle, c='b',
-                linewidth=lwidth, label='stork',
+        # Stork
+        ax.plot(prng, np.array(data['stork'])/nsamples, lstyle, 
+                c='b', linewidth=lwidth, label='Storkey',
                 marker=marker, markersize=msize)
-        pl.plot(prng, np.array(data['proj'])/nsamples, lstyle, c='g', 
-                linewidth=lwidth, label='proj',
+        # Proj
+        ax.plot(prng, np.array(data['proj'])/nsamples, lstyle, 
+                c='g', linewidth=lwidth, label='Projection',
                 marker=marker, markersize=msize)
-        pl.legend(prop={'size':12})
+        # ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., prop={'size':12})
+        # ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
+        #           ncol=4, mode="expand", borderaxespad=0.)
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+                  fancybox=True, shadow=True, ncol=3)
         # pl.show()
         pl.savefig('fx_vs_pnum_n'+str(qubits)+'.png')

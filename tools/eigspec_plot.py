@@ -51,7 +51,7 @@ for col in xrange(eignum):
     pl.plot(time, eigs[:,col])
 
 pl.title(title)
-pl.xlabel('Time')
+pl.xlabel('t/T')
 pl.ylabel('Energy')
 if filename is None:
     pl.savefig('eigenspectrum.png')
