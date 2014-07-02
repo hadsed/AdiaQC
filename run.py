@@ -98,6 +98,9 @@ errchk = params['errchk']
 eps = params['eps']
 isingConvert = params['isingConvert']
 isingSigns = params['isingSigns']
+hzscale = params['hzscale']
+hzzscale = params['hzzscale']
+hxscale = params['hxscale']
 
 # Output some params to a file
 try:
@@ -270,6 +273,99 @@ if isinstance(T, collections.Iterable):
                     finalOutputStr += outstr + '\n'
                 # Print out the probabilities
                 print "\nProbability (T = "+str(T[i])+"):"
+                print finalOutputStr
+
+    # Sort fidelity data (so the plots come out correctly)
+    if (outinfo['fiddat'] or outinfo['fidplot']): 
+        fidelitydata, fidelitydataplot = \
+            solve.output.SortFidelity(outinfo['fidnumstates'], fidelitydata)
+    # Write out fidelity data
+    if outinfo['fiddat']: 
+        solve.output.RecordFidelity(fidelitydata, outinfo['outdir'], 
+                                    outinfo['binary'])
+    # Plot fidelity(T)
+    if outinfo['fidplot']: 
+        solve.output.PlotFidelity(fidelitydataplot, outinfo['outdir'],
+                                  outinfo['fidnumstates'])
+# Determine if we're doing multiple simulations over T
+elif hzscale is not None:
+    # Keep the fidelity data somewhere
+    if (outinfo['fiddat'] or outinfo['fidplot']):
+        fidelitydata = []
+    # Go through all the T's
+    for i in range(0, len(hzscale)): 
+        # Solve the Schrodinger equation, get back the final state and mingap
+        Psi, mingap = solve.ExpPert(nQubits, hzscale[i]*hz, hzz, hx, Psi0, 
+                                    T, dt, errchk, eps, outinfo)
+        # Rename eigenspectrum.dat[.npy] for particular G (hzscale element)
+        esout_pref = outinfo['outdir']+'/'
+        esout = esout_pref+'eigenspectrum.dat'
+        esrenamed = esout_pref+'eigspecG'+str(hzscale[i])+'.dat'
+        print esout, esrenamed
+        print outinfo['binary']
+        if outinfo['binary']:
+            esout += '.npy'
+            esrenamed += '.npy'
+        print esout, esrenamed
+        os.rename(esout, esrenamed)
+        # Do fidelity stuff
+        if outinfo['fiddat'] or outinfo['fidplot']:
+            # Get the eigenpairs
+            Hvals, Hvecs = sp.linalg.eigh(hz + hzz)
+            # Sort by eigenvalues
+            idx = Hvals.argsort()
+            Hvals = Hvals[idx]
+            Hvecs = Hvecs[:,idx]
+            Hvecs = sp.transpose(Hvecs) # So we can grab them as vectors
+            # Construct fidelity data
+            if (outinfo['fiddat'] or outinfo['fidplot']):
+                d = solve.output.ConstructFidelityData(
+                                    Psi, 
+                                    Hvecs[0:outinfo['fidnumstates']], 
+                                    T, 
+                                    outinfo['outdir'])
+
+                for j in range(0, outinfo['fidnumstates']):
+                    fidelitydata.append(d[j])
+        # Record the mingap
+        if outinfo['mingap']:
+            solve.output.RecordMingap(hzscale[i], mingap, 'mingap.dat',
+                                      i, relpath, outinfo)
+        # Record probabilities
+        if outinfo['probout']:
+            # Get state labelings and probabilities
+            bitstring = statelabels.GenerateLabels(nQubits)
+            density = statelabels.GetProbabilities(nQubits, Psi)
+
+            # Record the final output probabilities
+            solve.output.RecordProbs(bitstring, density, 
+                                     'probsG'+str(hzscale[i])+'.dat', 
+                                     relpath, outinfo)
+
+            # Check if the bitstrings were recorded, if not, record them
+            if not os.path.isfile(relpath+outinfo['outdir']+'/statelabels.txt'):
+                # Build a nice string for output to file
+                finalstr = ''
+                for j in range(2**nQubits):
+                    finalstr += bitstring[j] + '\n'
+                with open(relpath+outinfo['outdir']+'/statelabels.txt', 
+                          "w") as file:
+                    file.write(finalstr)
+
+            # Incase the user wants this printed to screen
+            if outinfo['probshow']:
+                finalOutputStr = ''
+                # Sort by probability
+                bitstring, density = statelabels.SortStates(nQubits, 
+                                                            Psi, 
+                                                            bitstring,
+                                                            density)
+                # Construct a nice-looking string
+                for j in range(2**nQubits):
+                    outstr = bitstring[j] + '\t' + '%.8E' % density[j]
+                    finalOutputStr += outstr + '\n'
+                # Print out the probabilities
+                print "\nProbability (T = "+str(T)+"):"
                 print finalOutputStr
 
     # Sort fidelity data (so the plots come out correctly)

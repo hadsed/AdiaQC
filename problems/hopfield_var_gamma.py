@@ -69,7 +69,7 @@ def parameters(cmdargs):
     overlapplot = 0 # Plot overlap
 
     # Output directory stuff
-    probdir = 'data/hopfield_var_gamma/n'+str(nQubits)+'p'+\
+    probdir = 'data/hopfield_var_gamma_new/n'+str(nQubits)+'p'+\
         str(hparams['numMemories'])+hparams['learningRule']
     if isinstance(T, collections.Iterable):
         probdir += 'MultiT'
@@ -88,17 +88,25 @@ def parameters(cmdargs):
     errchk = 0 # Error-checking on/off (for simulation accuracy)
     eps = 0.01 # Numerical error in normalization condition (1 - norm < eps)
 
+    # Construct network Ising parameters
+    neurons = nQubits
+
     # Specify a QUBO (convert to Ising = True), or alpha, beta directly 
     # (convert = False), and also specify the signs on the Ising Hamiltonian 
     # terms (you can specify coefficients too for some problems if needed)
     isingConvert = 0
     isingSigns = {'hx': -1, 'hz': -1, 'hzz': -1}
 
-    # Construct network Ising parameters
-    neurons = nQubits
+    # Scaling matrices for Ising coefficients (can be list, similar to multiT)
+    gbeg = 0.0
+    gend = 1.0
+    gstp = 0.5
+    hzscale = sp.arange(0.0, 1.0, 0.5)
+    hzzscale = None
+    hxscale = None
 
     # This is gamma, the appropriate weighting on the input vector
-    isingSigns['hz'] *= float(cmdargs['garg'])
+    # isingSigns['hz'] *= float(cmdargs['garg'])
 
     alpha = sp.array(hparams['inputState'])
     beta = sp.zeros((neurons,neurons))
@@ -137,7 +145,7 @@ def parameters(cmdargs):
         'inputState': hparams['inputState'],
         'memories': memories,
         'answer': memories[0],
-        'gamma': float(cmdargs['garg']),
+        'gamma': [gbeg, gend, gstp],
         'annealTime': list(T) if isinstance(T, collections.Iterable) else T
                }
 
@@ -173,5 +181,8 @@ def parameters(cmdargs):
         'probshow': probshow,
         'probout': probout,
         'mingap': mingap,
-        'stateoverlap': None
+        'stateoverlap': None,
+        'hzscale': hzscale,
+        'hzzscale': hzscale,
+        'hxscale': hzscale
         }

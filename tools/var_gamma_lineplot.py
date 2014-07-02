@@ -74,7 +74,7 @@ if __name__=="__main__":
     parser.add_option("-q", "--qubits", dest="qubits", default=2,
                       type="int", 
                       help="Number of qubits.")
-    parser.add_option("-t", "--threshold", dest="threshold", default=0.7,
+    parser.add_option("-t", "--threshold", dest="threshold", default=0.66666666,
                       type="float", 
                       help="Threshold probability for determining success "+\
                           "(0 < thresh < 1).")
@@ -89,7 +89,8 @@ if __name__=="__main__":
                       help="Do we need to get the success/failure data.")
     parser.add_option("-l", "--lrule", dest="lrule", default=0,
                       type="int", 
-                      help="Learning rule to plot (0: all, 1: hebb, 2: stork, 3: proj).")
+                      help="Learning rule to plot (0: all, 1: hebb, "+\
+                          "2: stork, 3: proj).")
     parser.add_option("-n", "--nsamples", dest="nsamples", default=250,
                       type="float", 
                       help="Number of samples (to normalize f_x).")
@@ -104,7 +105,8 @@ if __name__=="__main__":
 
     # This needs to be hardcoded for now
     # gammarng = [ 0.01, 0.05, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0 ]
-    gammarng = np.arange(0.0, 2.0, 0.05)
+    # gammarng = np.arange(0.0, 2.0, 0.05)
+    gammarng = np.arange(0.0, 1.0, 0.5)
     lengamma = len(gammarng)
 
     if getdataopt:
@@ -116,7 +118,7 @@ if __name__=="__main__":
                 'proj':  [ np.zeros((lengamma, nsamples)) for k in range(qubits) ]}
         pref = 'n'+str(qubits)+'p'
         # Loop over pattern numbers
-        for pnum in range(qubits):
+        for pnum in [1]:#range(qubits):
             print("Pnum: ", str(pnum))
             for lr in ['hebb', 'stork', 'proj']:
                 os.chdir(pref+str(pnum+1)+lr)
@@ -125,19 +127,24 @@ if __name__=="__main__":
                         continue
                     os.chdir(root)
                     try:
-                        success, sprob, gamma = analysis(probsfname, binary, threshold)
+                        for gam in gammarng:
+                            probsfname = 'probsG'+str(gam)
+                            success, sprob, gamma = analysis(probsfname, 
+                                                             binary, 
+                                                             threshold)
+                        if success:
+                            try:
+                                gidx = np.where(np.isclose(gammarng, 
+                                                           gamma))[0][0]
+                                sidx = int(root[2:]) % lengamma
+                            except:
+                                os.chdir('../')
+                                continue
+                            data[lr][pnum][gidx, sidx] += 1
                     except:
                         print("Failure at: ", root)
                         os.chdir('../')
                         continue
-                    if success:
-                        try:
-                            gidx = np.where(np.isclose(gammarng, gamma))[0][0]
-                            sidx = int(root[2:]) % lengamma
-                        except:
-                            os.chdir('../')
-                            continue
-                        data[lr][pnum][gidx, sidx] += 1
                     os.chdir('../')
                 os.chdir('../')
 
@@ -154,40 +161,47 @@ if __name__=="__main__":
         lstyle = '-'
         marker = '.'
         msize = 6
-        color = ['black', 'blue', 'green', 'orange', 'red']
+        color = ['black', 'blue', 'green', 'orange', 'red']*2
 
         if lrule == 0:
             # Create figure
-            fig, (ax1, ax2, ax3) = pl.subplots(1, 3, sharey=True, figsize=(20,9))
-            fig.subplots_adjust(wspace=0.05, left=0.05, right=0.95, bottom=0.15)
-            fig.suptitle(r'$\textbf{Fractional success as a function of input bias'+\
-                         ' (N = '+str(qubits)+')}$', fontsize=18)
+            fig, (ax1, ax2, ax3) = pl.subplots(1, 3, 
+                                               sharey=True, 
+                                               figsize=(20,9))
+            fig.subplots_adjust(wspace=0.05, left=0.05, 
+                                right=0.95, bottom=0.15)
+            fig.suptitle(r'$\textbf{Fractional success as a function of '+\
+                             'input bias (N = '+str(qubits)+')}$', 
+                         fontsize=18)
             pl.ylim([0.0,1.05])
             # Hebb
             ax1.set_title('Hebb')
-            ax1.set_ylabel(r'$\langle f_x \rangle$', fontsize=24, rotation='horizontal')
-            ax1.set_xlim([-0.05, 2.05])
+            ax1.set_ylabel(r'$\langle f_x \rangle$', fontsize=24, 
+                           rotation='horizontal')
+            ax1.set_xlim([-0.05, 1.05])
             for pnum in range(qubits):
-                ax1.plot(gammarng, np.array(data['hebb'][pnum])/nsamples, lstyle, 
-                         c=color[pnum], linewidth=lwidth, label=str(pnum+1)+' patterns', 
+                ax1.plot(gammarng, np.sum(data['hebb'][pnum], axis=1)/nsamples, 
+                         lstyle, c=color[pnum], linewidth=lwidth, 
+                         label=str(pnum+1)+' patterns', 
                          marker=marker, markersize=msize)
             # Stork
-            ax2.set_title('Stork')
+            ax2.set_title('Storkey')
             ax2.set_xlabel(r'$\boldsymbol{\Gamma}$', fontsize=20)
-            ax2.set_xlim([-0.05, 2.05])
+            ax2.set_xlim([-0.05, 1.05])
             for pnum in range(qubits):
-                ax2.plot(gammarng, np.array(data['stork'][pnum])/nsamples, lstyle, 
-                         c=color[pnum], linewidth=lwidth, label=str(pnum+1)+' patterns', 
+                ax2.plot(gammarng, np.sum(data['stork'][pnum], axis=1)/nsamples, 
+                         lstyle, c=color[pnum], linewidth=lwidth, 
+                         label=str(pnum+1)+' patterns', 
                          marker=marker, markersize=msize)
             # Proj
-            ax3.set_title('Proj')
-            ax3.set_xlim([-0.05, 2.05])
+            ax3.set_title('Projection')
+            ax3.set_xlim([-0.05, 1.05])
             for pnum in range(qubits):
-                ax3.plot(gammarng, np.array(data['proj'][pnum])/nsamples, lstyle, 
-                         c=color[pnum], linewidth=lwidth, label=str(pnum+1)+' patterns', 
+                ax3.plot(gammarng, np.sum(data['proj'][pnum], axis=1)/nsamples, 
+                         lstyle, c=color[pnum], linewidth=lwidth, 
+                         label=str(pnum+1)+' patterns', 
                          marker=marker, markersize=msize)
             pl.legend(prop={'size':12})
-            # pl.show()
             pl.savefig('var_gamma_n'+str(qubits)+'.png')
         else:
             if lrule == 1:
@@ -204,7 +218,7 @@ if __name__=="__main__":
             pl.title(r'$\textbf{Fractional success as a function of input bias'+\
                          ' (N = '+str(qubits)+'), '+lrule+'}$', fontsize=18)
             pl.xlabel(r'$\boldsymbol{\Gamma}$', fontsize=20)
-            pl.ylabel(r'$\langle f_x \rangle$', fontsize=24)#, rotation='horizontal')
+            pl.ylabel(r'$\langle f_x \rangle$', fontsize=24)
             pl.ylim([0.0, 1.05])
             pl.xlim([-0.05, 2.05])
             for pnum in range(qubits):
@@ -219,7 +233,9 @@ if __name__=="__main__":
                 #             linewidth=lwidth, yerr=yerr, color='grey')
                 # Plot with some color
                 pl.plot(gammarng, fxavg, c=color[pnum],
-                        label=str(pnum+1)+' patterns', marker=marker, markersize=msize,
+                        label=str(pnum+1)+' patterns', 
+                        marker=marker, 
+                        markersize=msize,
                         linewidth=lwidth)
             pl.legend(prop={'size':12})
             pl.show()

@@ -45,7 +45,8 @@ python = "python2"
 hop = "hopfield_var_gamma"
 
 # Gamma grid
-gamma_grid = np.arange(0.0, 2.0, 0.05)
+#gamma_grid = np.arange(0.0, 2.0, 0.05)
+gamma_grid = [0]
 
 devnull = open('/dev/null', 'w')
 
