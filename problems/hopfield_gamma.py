@@ -22,33 +22,28 @@ def parameters(cmdargs):
 
     # The Hopfield parameters
     hparams = {
-        'numNeurons': 5,
-        'inputState': [1,1,1,1,1],
+        'numNeurons': 4,
+        'inputState': [1,-1,1,-1],
         'learningRule': cmdargs['simtype'],
         'bias': float(cmdargs['farg'])
         }
 
     # Construct memories
-    memories = [[1,1,1,1,-1]]
-    # memories = [[1, -1, 1, -1, 1], 
-    #             [-1, -1, -1, 1, -1], 
-    #             [-1, 1, 1, -1, -1], 
-    #             [-1, 1, -1, -1, -1], 
-    #             [1, 1, 1, -1, 1]]
-    # memories = [ [1,1,1,1,-1],
-    #              [-1,1,-1,-1,1],
-    #              [1,-1,-1,1,1],
-    #              [-1,-1,-1,1,-1],
-    #              # [-1,1,-1,-1,-1],
-    #              [-1,-1,-1,-1,-1] ]
-
+    # memories = sp.linalg.hadamard(hparams['numNeurons']).tolist()
+    # memories = memories[:1]
+    memories = [[1,-1,1,-1], 
+                [-1,1,1,1],
+                [-1,-1,1,1],
+                [1,-1,1,1]]
+    memories = [memories[0]]
     # Basic simulation params
     nQubits = hparams['numNeurons']
     T = 1000.0
-    dt = 0.01*T
+    # dt = 0.01*T
+    dt = 0.001*T
 
     # Output parameters
-    binary = 0 # Save output files as binary Numpy format
+    binary = 1 # Save output files as binary Numpy format
     progressout = 0 # Output simulation progress over anneal timesteps
 
     eigspecdat = 1 # Output data for eigspec
@@ -61,7 +56,7 @@ def parameters(cmdargs):
     overlapplot = 0 # Plot overlap
 
     # Output directory stuff
-    probdir = 'data/hopfield_gamma/n'+str(nQubits)+'p'+\
+    probdir = 'data/testcases_fixed/ortho/n'+str(nQubits)+'p'+\
         str(len(memories))+hparams['learningRule']
     if isinstance(T, collections.Iterable):
         probdir += 'MultiT'
@@ -101,24 +96,15 @@ def parameters(cmdargs):
     # Construct the memory matrix according to a learning rule
     if hparams['learningRule'] == 'hebb':
         # Construct pattern matrix according to Hebb's rule
-        for i in range(neurons):
-            for j in range(neurons):
-                for p in range(len(memories)):
-                    beta[i,j] += ( memories[p][i]*memories[p][j] -
-                                   len(memories)*(i == j) )
-        beta = sp.triu(beta)/float(neurons)
+        memMat = sp.matrix(memories).T
+        beta = sp.triu(memMat*memMat.T)/float(neurons)
     elif hparams['learningRule'] == 'stork':
         # Construct the memory matrix according to the Storkey learning rule
-        memMat = sp.zeros((neurons,neurons))
+        Wm = sp.zeros((neurons,neurons))
         for m, mem in enumerate(memories):
-            for i in range(neurons):
-                for j in range(neurons):
-                    hij = sp.sum([ memMat[i,k]*mem[k] for k in range(neurons) ])
-                    hji = sp.sum([ memMat[j,k]*mem[k] for k in range(neurons) ])
-                    # Don't forget to make the normalization a float!
-                    memMat[i,j] += 1./neurons*(mem[i]*mem[j] - mem[i]*hji - 
-                                               hij*mem[j])
-        beta = sp.triu(memMat)
+            Am = sp.mat((sp.outer(mem,mem) - sp.eye(neurons)))
+            Wm += (Am - Am*Wm - Wm*Am)/float(neurons)
+        beta = sp.triu(Wm)
     elif hparams['learningRule'] == 'proj':
         # Construct memory matrix according to the Moore-Penrose pseudoinverse rule
         memMat = sp.matrix(memories).T
@@ -168,5 +154,8 @@ def parameters(cmdargs):
         'probshow': probshow,
         'probout': probout,
         'mingap': mingap,
-        'stateoverlap': None
+        'stateoverlap': None,
+        'hzscale': None,
+        'hzzscale': None,
+        'hxscale': None
         }

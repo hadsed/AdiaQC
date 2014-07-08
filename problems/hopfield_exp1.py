@@ -20,6 +20,10 @@ import collections
 
 def parameters(cmdargs):
     """
+    cmdargs:
+             -q, qubits 
+             -k, lrule
+             -f, nmems
     """
 
     # The Hopfield parameters
@@ -54,6 +58,7 @@ def parameters(cmdargs):
     # Basic simulation params
     nQubits = hparams['numNeurons']
     T = 1000.0 # sp.arange(0.1, 15, 0.5)
+    # T = sp.array([10.0, 20.0, 50.0, 100.0])
     dt = 0.01*T
 
     # Define states for which to track probabilities in time
@@ -182,5 +187,8 @@ def parameters(cmdargs):
         'probshow': probshow,
         'probout': probout,
         'mingap': mingap,
-        'stateoverlap': stateoverlap
+        'stateoverlap': stateoverlap,
+        'hzscale': None,
+        'hzzscale': None,
+        'hxscale': None
         }

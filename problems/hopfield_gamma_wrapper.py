@@ -34,7 +34,7 @@ if __name__=="__main__":
     # lmode = options.lmode
 
 processes = set()
-bias_rng = np.arange(0.005, 1.05, 0.01)
+bias_rng = np.arange(0.0, 1.05, 0.01)
 
 # Get into the right dir (we're in problems)
 os.chdir('../')

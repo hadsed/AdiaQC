@@ -38,35 +38,44 @@ def parameters(cmdargs):
                  for j in xrange(hparams['numMemories']) ]
     # Choose an input state to start
     memories[0] = list(hparams['inputState'])
-    # Pick two random spins to flip
-    rndbit1 = sp.random.random_integers(0,hparams['numNeurons']-1)
-    rndbit2 = sp.random.random_integers(0,hparams['numNeurons']-1)
-    while rndbit1 == rndbit2:
-        rndbit2 = sp.random.random_integers(0,hparams['numNeurons']-1)
-    # Flip them
-    memories[0][rndbit1] *= -1
-    memories[0][rndbit2] *= -1
-    # Make sure that the input is NOT in the memory set
-    while list(hparams['inputState']) in memories:
-        # Do it all again to make sure we don't get stuck
-        memories = [ [ 2*sp.random.random_integers(0,1)-1 
-                       for k in xrange(hparams['numNeurons']) ]
-                     for j in xrange(hparams['numMemories']) ]
-        memories[0] = list(hparams['inputState'])
-        # Pick two random spins to flip
-        rndbit1 = sp.random.random_integers(0,hparams['numNeurons']-1)
-        rndbit2 = sp.random.random_integers(0,hparams['numNeurons']-1)
-        while rndbit1 == rndbit2:
-            rndbit2 = sp.random.random_integers(0,hparams['numNeurons']-1)
-        # Flip them
-        memories[0][rndbit1] *= -1
-        memories[0][rndbit2] *= -1
-    # Loop over additional memories, if there are any
+    # # Pick two random spins to flip
+    # rndbit1 = sp.random.random_integers(0,hparams['numNeurons']-1)
+    # rndbit2 = sp.random.random_integers(0,hparams['numNeurons']-1)
+    # while rndbit1 == rndbit2:
+    #     rndbit2 = sp.random.random_integers(0,hparams['numNeurons']-1)
+    # # Flip them
+    # memories[0][rndbit1] *= -1
+    # memories[0][rndbit2] *= -1
+    # # Make sure that the input is NOT in the memory set
+    # while list(hparams['inputState']) in memories:
+    #     # Do it all again to make sure we don't get stuck
+    #     memories = [ [ 2*sp.random.random_integers(0,1)-1 
+    #                    for k in xrange(hparams['numNeurons']) ]
+    #                  for j in xrange(hparams['numMemories']) ]
+    #     memories[0] = list(hparams['inputState'])
+    #     # Pick two random spins to flip
+    #     rndbit1 = sp.random.random_integers(0,hparams['numNeurons']-1)
+    #     rndbit2 = sp.random.random_integers(0,hparams['numNeurons']-1)
+    #     while rndbit1 == rndbit2:
+    #         rndbit2 = sp.random.random_integers(0,hparams['numNeurons']-1)
+    #     # Flip them
+    #     memories[0][rndbit1] *= -1
+    #     memories[0][rndbit2] *= -1
+    # # Loop over additional memories, if there are any
+    # for imem, mem in enumerate(memories[1:]):
+    #     while hamdist(mem, hparams['inputState']) < 2.0:
+    #         # Flip a random spin
+    #         rndbit = sp.random.random_integers(0,hparams['numNeurons']-1)
+    #         memories[imem+1][rndbit] *= -1
+
+    memories[0][:3] *= -1
+    # Loop over memories, make sure none are closer than 3.0 to input
     for imem, mem in enumerate(memories[1:]):
         while hamdist(mem, hparams['inputState']) < 2.0:
             # Flip a random spin
             rndbit = sp.random.random_integers(0,hparams['numNeurons']-1)
             memories[imem+1][rndbit] *= -1
+    
 
     # Basic simulation params
     nQubits = hparams['numNeurons']
@@ -191,5 +200,8 @@ def parameters(cmdargs):
         'probshow': probshow,
         'probout': probout,
         'mingap': mingap,
-        'stateoverlap': None
+        'stateoverlap': None,
+        'hzscale': None,
+        'hzzscale': None,
+        'hxscale': None
         }

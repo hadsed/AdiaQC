@@ -173,12 +173,14 @@ if __name__=="__main__":
         ax1.set_ylabel(r'$\textbf{Failure Probability}$', fontsize=24)
         ax1.yaxis.set_label_coords(-0.1, 0.45)
         ax1.set_ylim([0.0, 1.05])
+        ax1.set_xlim([-0.05, 1.0])
         for pnum in range(qubits):
             ax1.plot(gammarng, np.sum(data['hebb'][pnum], axis=1)/nsamples, lstyle, 
                      c=colors[pnum], linewidth=lwidth,
                      marker=marker, markersize=msize)
         # Stork
         ax2.set_title('Storkey', fontsize=24)
+        ax2.set_xlim([-0.05, 1.0])
         ax2.set_xlabel(r'$\mathbf{\Gamma}$', fontsize=24)
         for pnum in range(qubits):
             ax2.plot(gammarng, np.sum(data['stork'][pnum], axis=1)/nsamples, lstyle, 
@@ -187,6 +189,7 @@ if __name__=="__main__":
                      marker=marker, markersize=msize)
         # Proj
         ax3.set_title('Projection', fontsize=24)
+        ax3.set_xlim([-0.05, 1.0])
         for pnum in range(qubits):
             ax3.plot(gammarng, np.sum(data['proj'][pnum], axis=1)/nsamples, lstyle, 
                      c=colors[pnum], linewidth=lwidth, 

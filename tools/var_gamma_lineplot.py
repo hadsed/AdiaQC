@@ -103,24 +103,43 @@ if __name__=="__main__":
     lrule = options.lrule
     nsamples = options.nsamples
 
+    if lrule == 1:
+        lrlist = ['hebb']
+    elif lrule == 2:
+        lrlist = ['stork']
+    elif lrule == 3:
+        lrlist = ['proj']
+    elif lrule == 4:
+        lrlist = ['hebb', 'stork']
+    elif lrule == 5:
+        lrlist = ['hebb', 'proj']
+    elif lrule == 6:
+        lrlist = ['proj', 'stork']
+    else:
+        print("Learning rule number not recognized.")
+        sys.exit(0)
+
     # This needs to be hardcoded for now
     # gammarng = [ 0.01, 0.05, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0 ]
     # gammarng = np.arange(0.0, 2.0, 0.05)
-    gammarng = np.arange(0.0, 1.0, 0.5)
+    gammarng = np.arange(0.0, 10.0, 0.1)
     lengamma = len(gammarng)
 
     if getdataopt:
         # data = {'hebb': [ [0]*lengamma for k in range(qubits) ],
         #         'stork': [ [0]*lengamma for k in range(qubits) ],
         #         'proj': [ [0]*lengamma for k in range(qubits) ]}
-        data = {'hebb':  [ np.zeros((lengamma, nsamples)) for k in range(qubits) ],
-                'stork': [ np.zeros((lengamma, nsamples)) for k in range(qubits) ],
-                'proj':  [ np.zeros((lengamma, nsamples)) for k in range(qubits) ]}
+        data = {'hebb':  [ np.zeros((lengamma, int(nsamples))) 
+                           for k in range(qubits) ],
+                'stork': [ np.zeros((lengamma, int(nsamples))) 
+                           for k in range(qubits) ],
+                'proj':  [ np.zeros((lengamma, int(nsamples))) 
+                           for k in range(qubits) ]}
         pref = 'n'+str(qubits)+'p'
         # Loop over pattern numbers
-        for pnum in [1]:#range(qubits):
+        for pnum in range(qubits):
             print("Pnum: ", str(pnum))
-            for lr in ['hebb', 'stork', 'proj']:
+            for lr in lrlist:
                 os.chdir(pref+str(pnum+1)+lr)
                 for root, dirs, files in os.walk('.'):
                     if root == '.':
@@ -132,15 +151,15 @@ if __name__=="__main__":
                             success, sprob, gamma = analysis(probsfname, 
                                                              binary, 
                                                              threshold)
-                        if success:
-                            try:
-                                gidx = np.where(np.isclose(gammarng, 
-                                                           gamma))[0][0]
-                                sidx = int(root[2:]) % lengamma
-                            except:
-                                os.chdir('../')
-                                continue
-                            data[lr][pnum][gidx, sidx] += 1
+                            if success:
+                                try:
+                                    gidx = np.where(np.isclose(gammarng, 
+                                                               gam))[0][0]
+                                    sidx = int(root[2:]) % lengamma
+                                except:
+                                    os.chdir('../')
+                                    continue
+                                data[lr][pnum][gidx, sidx] += 1
                     except:
                         print("Failure at: ", root)
                         os.chdir('../')
@@ -220,14 +239,12 @@ if __name__=="__main__":
             pl.xlabel(r'$\boldsymbol{\Gamma}$', fontsize=20)
             pl.ylabel(r'$\langle f_x \rangle$', fontsize=24)
             pl.ylim([0.0, 1.05])
-            pl.xlim([-0.05, 2.05])
+            pl.xlim([-0.05, gammarng[-1]+0.05])
+            pl.xlim([-0.05, 2.5])
             for pnum in range(qubits):
-            # for pnum in [3]:
                 fx = data[lrule][pnum]
                 fxavg = np.average(fx, axis=1)
                 yerr = np.average(fx**2, axis=1) - fxavg**2
-                # print yerr == fx.std(1)
-                print gammarng[np.argmax(fxavg)]
                 # Do the error margins
                 # pl.errorbar(gammarng, fxavg, marker=marker, markersize=msize,
                 #             linewidth=lwidth, yerr=yerr, color='grey')
@@ -238,5 +255,4 @@ if __name__=="__main__":
                         markersize=msize,
                         linewidth=lwidth)
             pl.legend(prop={'size':12})
-            pl.show()
             pl.savefig('var_gamma_n'+str(qubits)+'_'+lrule+'.png')

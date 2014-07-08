@@ -180,5 +180,8 @@ def parameters(cmdargs):
         'probshow': probshow,
         'probout': probout,
         'mingap': mingap,
-        'stateoverlap': None
+        'stateoverlap': None,
+        'hzscale': None,
+        'hzzscale': None,
+        'hxscale': None
         }

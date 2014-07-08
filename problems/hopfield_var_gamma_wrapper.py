@@ -57,7 +57,6 @@ if (lmode == 0) or (lmode == 1) or (lmode == 4) or (lmode == 5):
             time.sleep(1)  # wait for last dir to be created
             command = python+" run.py -p "+hop+" -i "+str(instance)+" -k hebb" + \
                 " -q "+str(qubits)+" -f "+str(nummems)+" -g "+str(gamma)
-            print "HopfieldHebb" + str(instance)
             processes.add(subprocess.Popen([command], shell=True, stdout=devnull, stderr=devnull))
             if len(processes) >= max_processes:
                 os.wait()
@@ -70,7 +69,6 @@ if (lmode == 0) or (lmode == 2) or (lmode == 4) or (lmode == 6):
         for gamma in gamma_grid:
             command = python+" run.py -p "+hop+" -i "+str(instance)+" -k stork" + \
                 " -q "+str(qubits)+" -f "+str(nummems)+" -g "+str(gamma)
-            print "HopfieldStork" + str(instance)
             processes.add(subprocess.Popen([command], shell=True, stdout=devnull, stderr=devnull))
             if len(processes) >= max_processes:
                 os.wait()
@@ -83,7 +81,6 @@ if (lmode == 0) or (lmode == 3) or (lmode == 5) or (lmode == 6):
         for gamma in gamma_grid:
             command = python+" run.py -p "+hop+" -i "+str(instance)+" -k proj" + \
                 " -q "+str(qubits)+" -f "+str(nummems)+" -g "+str(gamma)
-            print "HopfieldProj" + str(instance)
             processes.add(subprocess.Popen([command], shell=True, stdout=devnull, stderr=devnull))
             if len(processes) >= max_processes:
                 os.wait()

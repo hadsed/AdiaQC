@@ -21,7 +21,8 @@ def parameters(cmdargs):
     binary = 0 # Save output files as binary Numpy format
     progressout = 0 # Output simulation progress over anneal timesteps
 
-    outputdir = 'data/hopfield/' # In relation to run.py
+    # outputdir = 'data/hopfield/' # In relation to run.py
+    outputdir = 'data/testcases/ortho_pn/' # In relation to run.py
     eigspecdat = 1 # Output data for eigspec
     eigspecplot = 0 # Plot eigspec
     eigspecnum = 2**nQubits # Number of eigenvalues to output
@@ -50,13 +51,16 @@ def parameters(cmdargs):
 
     # Construct network Ising parameters
     neurons = nQubits
+
     memories = [[1,-1,1,1,-1],
                 [-1,1,-1,1,1],
                 [1,1,-1,-1,-1]]
     inputstate = [1,1,-1,1,1]
 
-    memories = list(sp.linalg.hadamard(nQubits))
-    memories = memories[0:2]
+    memories = sp.linalg.hadamard(neurons).tolist()
+    inputstate = memories[0]
+    # inputstate = [0]*neurons
+    # memories = sp.array(memories)[[0,2]].tolist()
 
     print("Input:")
     print(spins2bitstr(inputstate))
@@ -68,7 +72,8 @@ def parameters(cmdargs):
           
     # This is gamma, the appropriate weighting on the input vector
     # isingSigns['hz'] *= 1 - (len(inputstate) - inputstate.count(0))/(2*neurons)
-    isingSigns['hz'] *= 0.0
+    # isingSigns['hz'] *= 0.6772598397
+    isingSigns['hz'] *= 1.0
     print("Gamma: ", isingSigns['hz'])
     print('')
 
@@ -106,14 +111,14 @@ def parameters(cmdargs):
     #             memMat[i,j] += (mem[i]*mem[j] - mem[i]*hji - hij*mem[j])/float(neurons)
     # beta = sp.triu(memMat)
 
-    # Storkey rule
-    Wm = sp.zeros((neurons,neurons))
-    for m, mem in enumerate(memories):
-        Am = sp.mat((sp.outer(mem,mem) - sp.eye(neurons)))
-        Wm += (Am - Am*Wm - Wm*Am)/float(neurons)
-    beta = sp.triu(Wm)
+    # # Storkey rule
+    # Wm = sp.zeros((neurons,neurons))
+    # for m, mem in enumerate(memories):
+    #     Am = sp.mat((sp.outer(mem,mem) - sp.eye(neurons)))
+    #     Wm += (Am - Am*Wm - Wm*Am)/float(neurons)
+    # beta = sp.triu(Wm)
 
-    # Construct memory matrix according to the Moore-Penrose pseudoinverse rule
+    # # Construct memory matrix according to the Moore-Penrose pseudoinverse rule
     # memMat = sp.matrix(memories).T
     # beta = sp.triu(memMat * sp.linalg.pinv(memMat))
 
@@ -153,5 +158,8 @@ def parameters(cmdargs):
         'probshow': probshow,
         'probout': probout,
         'mingap': mingap,
-        'stateoverlap': None
+        'stateoverlap': None,
+        'hzscale': None,
+        'hzzscale': None,
+        'hxscale': None
         }

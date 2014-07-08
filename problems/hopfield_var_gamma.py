@@ -69,7 +69,7 @@ def parameters(cmdargs):
     overlapplot = 0 # Plot overlap
 
     # Output directory stuff
-    probdir = 'data/hopfield_var_gamma_new/n'+str(nQubits)+'p'+\
+    probdir = 'data/hopfield_var_gamma_new_hop5/n'+str(nQubits)+'p'+\
         str(hparams['numMemories'])+hparams['learningRule']
     if isinstance(T, collections.Iterable):
         probdir += 'MultiT'
@@ -101,7 +101,7 @@ def parameters(cmdargs):
     gbeg = 0.0
     gend = 1.0
     gstp = 0.5
-    hzscale = sp.arange(0.0, 1.0, 0.5)
+    hzscale = sp.arange(0.0, 10.0, 0.1)
     hzzscale = None
     hxscale = None
 

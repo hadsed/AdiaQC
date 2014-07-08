@@ -42,7 +42,7 @@ def parameters(cmdargs):
 
     # At least one pattern must be one Hamming unit away from the input
     memories[0] = list(hparams['inputState'])
-    # memories[0][sp.random.random_integers(0,hparams['numNeurons']-1)] *= -1
+    memories[0][sp.random.random_integers(0,hparams['numNeurons']-1)] *= -1
 
     # Make sure all other patterns are not the input state
     def hamdist(a,b):
@@ -58,8 +58,9 @@ def parameters(cmdargs):
     # Basic simulation params
     nQubits = hparams['numNeurons']
     T = 1000.0 # sp.arange(0.1, 15, 0.5)
-    # T = sp.array([10.0, 20.0, 50.0, 100.0])
-    dt = 0.01*T
+    # T = sp.array([10.0, 20.0, 50.0, 100.0, 500.0, 
+    #               1000.0, 5000.0, 10000.0, 50000.0])
+    dt = 0.005*T
 
     # Define states for which to track probabilities in time
     # import statelabels
@@ -86,7 +87,7 @@ def parameters(cmdargs):
     overlapplot = 0 # Plot overlap
 
     # Output directory stuff
-    probdir = 'data/hopfield_exp3_tuned/n'+str(nQubits)+'p'+\
+    probdir = 'data/hopfield_exp3_nodiag/n'+str(nQubits)+'p'+\
         str(hparams['numMemories'])+hparams['learningRule']
     if isinstance(T, collections.Iterable):
         probdir += 'MultiT'
@@ -143,7 +144,7 @@ def parameters(cmdargs):
         # Moore-Penrose pseudoinverse rule
         memMat = sp.matrix(memories).T
         beta = sp.triu(memMat * sp.linalg.pinv(memMat))
-
+    sp.fill_diagonal(beta, 0.0)
     # Some outputs
     outputs = {
         'nQubits': nQubits,
@@ -187,5 +188,8 @@ def parameters(cmdargs):
         'probshow': probshow,
         'probout': probout,
         'mingap': mingap,
-        'stateoverlap': stateoverlap
+        'stateoverlap': stateoverlap,
+        'hzscale': None,
+        'hzzscale': None,
+        'hxscale': None
         }
