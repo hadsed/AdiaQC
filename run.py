@@ -101,6 +101,7 @@ isingSigns = params['isingSigns']
 hzscale = params['hzscale']
 hzzscale = params['hzzscale']
 hxscale = params['hxscale']
+solveMethod = params['solveMethod']
 
 # Output some params to a file
 try:
@@ -213,8 +214,26 @@ if isinstance(T, collections.Iterable):
             else:
                 outinfo['eigplot'] = 0
         # Solve the Schrodinger equation, get back the final state and mingap
-        Psi, mingap = solve.ExpPert(nQubits, hz, hzz, hx, Psi0, T[i], dt[i],
-                                    errchk, eps, outinfo)
+        if solveMethod == 'ExpPert':
+            Psi, mingap = solve.ExpPert(nQubits, hz, hzz, hx, Psi0, 
+                                        T[i], dt[i], errchk, eps, 
+                                        outinfo)
+        elif solveMethod == 'SuzTrot':
+            Psi, mingap = solve.SuzTrot(nQubits, hz, hzz, hx, Psi0, 
+                                        T[i], dt[i], errchk, eps, 
+                                        outinfo)
+        elif solveMethod == 'ForRuth':
+            Psi, mingap = solve.ForRuth(nQubits, hz, hzz, hx, Psi0, 
+                                        T[i], dt[i], errchk, eps, 
+                                        outinfo)
+        elif solveMethod == 'BCM':
+            Psi, mingap = solve.BCM(nQubits, hz, hzz, hx, Psi0, 
+                                    T[i], dt[i], errchk, eps, 
+                                    outinfo)
+        else:
+            print("Variable solveMethod has invalid input. See "+
+                  "solve.py for the different solver methods available.")
+            sys.exit(1)
         # Do fidelity stuff
         if outinfo['fiddat'] or outinfo['fidplot']:
             # Get the eigenpairs
@@ -295,8 +314,26 @@ elif hzscale is not None:
     # Go through all the T's
     for i in range(0, len(hzscale)): 
         # Solve the Schrodinger equation, get back the final state and mingap
-        Psi, mingap = solve.ExpPert(nQubits, hzscale[i]*hz, hzz, hx, Psi0, 
-                                    T, dt, errchk, eps, outinfo)
+        if solveMethod == 'ExpPert':
+            Psi, mingap = solve.ExpPert(nQubits, hz, hzz, hx, Psi0, 
+                                        T, dt, errchk, eps, 
+                                        outinfo)
+        elif solveMethod == 'SuzTrot':
+            Psi, mingap = solve.SuzTrot(nQubits, hz, hzz, hx, Psi0, 
+                                        T, dt, errchk, eps, 
+                                        outinfo)
+        elif solveMethod == 'ForRuth':
+            Psi, mingap = solve.ForRuth(nQubits, hz, hzz, hx, Psi0, 
+                                        T, dt, errchk, eps, 
+                                        outinfo)
+        elif solveMethod == 'BCM':
+            Psi, mingap = solve.BCM(nQubits, hz, hzz, hx, Psi0, 
+                                    T, dt, errchk, eps, 
+                                    outinfo)
+        else:
+            print("Variable solveMethod has invalid input. See "+
+                  "solve.py for the different solver methods available.")
+            sys.exit(1)
         # Rename eigenspectrum.dat[.npy] for particular G (hzscale element)
         esout_pref = outinfo['outdir']+'/'
         esout = esout_pref+'eigenspectrum.dat'
@@ -381,10 +418,27 @@ elif hzscale is not None:
         solve.output.PlotFidelity(fidelitydataplot, outinfo['outdir'],
                                   outinfo['fidnumstates'])
 else:
-    Psi, mingap = solve.ExpPert(nQubits, hz, hzz, hx, Psi0, T, dt, 
-                                errchk, eps, outinfo)
-    # Psi, mingap = solve.edsolver(nQubits, hz, hzz, hx, Psi0, T, dt, 
-    #                              errchk, eps, outinfo)
+    # Solve the Schrodinger equation, get back the final state and mingap
+    if solveMethod == 'ExpPert':
+        Psi, mingap = solve.ExpPert(nQubits, hz, hzz, hx, Psi0, 
+                                    T, dt, errchk, eps, 
+                                    outinfo)
+    elif solveMethod == 'SuzTrot':
+        Psi, mingap = solve.SuzTrot(nQubits, hz, hzz, hx, Psi0, 
+                                    T, dt, errchk, eps, 
+                                    outinfo)
+    elif solveMethod == 'ForRuth':
+        Psi, mingap = solve.ForRuth(nQubits, hz, hzz, hx, Psi0, 
+                                    T, dt, errchk, eps, 
+                                    outinfo)
+    elif solveMethod == 'BCM':
+        Psi, mingap = solve.BCM(nQubits, hz, hzz, hx, Psi0, 
+                                T, dt, errchk, eps, 
+                                outinfo)
+    else:
+        print("Variable solveMethod has invalid input. See "+
+              "solve.py for the different solver methods available.")
+        sys.exit(1)
 
     # Output the minimal spectral gap
     if outinfo['mingap']:

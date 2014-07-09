@@ -21,8 +21,7 @@ def parameters(cmdargs):
     binary = 0 # Save output files as binary Numpy format
     progressout = 0 # Output simulation progress over anneal timesteps
 
-    # outputdir = 'data/hopfield/' # In relation to run.py
-    outputdir = 'data/testcases/ortho_pn/' # In relation to run.py
+    outputdir = 'data/hopfield/' # In relation to run.py
     eigspecdat = 1 # Output data for eigspec
     eigspecplot = 0 # Plot eigspec
     eigspecnum = 2**nQubits # Number of eigenvalues to output
@@ -31,6 +30,7 @@ def parameters(cmdargs):
     fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
     overlapdat = 0 # Output overlap data
     overlapplot = 0 # Plot overlap
+    solveMethod = 'BCM' # 'ExpPert', 'SuzTrot', 'ForRuth', 'BCM'
 
     probshow = 1 # Print final state probabilities to screen
     probout = 1 # Output probabilities to file
@@ -161,5 +161,6 @@ def parameters(cmdargs):
         'stateoverlap': None,
         'hzscale': None,
         'hzzscale': None,
-        'hxscale': None
+        'hxscale': None,
+        'solveMethod': solveMethod
         }
