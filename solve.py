@@ -11,6 +11,7 @@ import os
 import scipy as sp
 import numpy as np
 from scipy.sparse import linalg as sla
+from scipy import sparse as sps
 
 import output
 
@@ -135,6 +136,11 @@ def SuzTrot(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
     acoef = np.array([0, 1, 0, 0])
     bcoef = np.array([0.5, 0.5, 0, 0])
 
+    # Holder operators (requires more memory, but it's faster)
+    Az = (hz + hzz).copy()
+    Ax = hx.copy().todense()
+    h = sp.linalg.hadamard(2**nQubits)/(2.**(nQubits/2.))
+
     # Loop over time
     for i in range(0, int(sp.floor(N))):
         t = i*dt
@@ -143,13 +149,22 @@ def SuzTrot(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
         # Time-dependent coefficients
         cz = (-1j*dt)*t/T
         cx = (-1j*dt)*(1 - t/T)
-        
+
         # Run through coefficient indices backwards
         for idx in range(len(acoef))[::-1]:
             if bcoef[idx] != 0:
-                Psi = expm(bcoef[idx]*cz*(hz+hzz))*Psi
+                # Psi = expm(bcoef[idx]*(hz + hzz))*Psi
+                # A = bcoef[idx]*cz*(hz + hzz).copy()
+                # A.setdiag(np.exp(A.diagonal()))
+                Az = bcoef[idx]*cz*(hz + hzz)
+                Az.setdiag(np.exp(Az.diagonal()))
+                Psi = Az*Psi
             if acoef[idx] != 0:
-                Psi = expm(acoef[idx]*cx*hx)*Psi
+                # Psi = expm(acoef[idx]*hx)*Psi
+                Ax = acoef[idx]*cx*hx.todense()
+                Ax = h*Ax*h
+                Ax = np.matrix(np.diag(np.exp(np.diag(Ax))))
+                Psi = (h*Ax*h)*Psi
 
         # Get eigendecomposition of true Hamiltonian if necessary
         if (errchk or outinfo['mingap']
@@ -243,6 +258,11 @@ def ForRuth(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
     acoef = np.array([0, theta, 1-2.*theta, theta])
     bcoef = np.array([theta/2., (1-theta)/2., (1-theta)/2., theta/2.])
 
+    # Holder operators (requires more memory, but it's faster)
+    Az = (hz + hzz).copy()
+    Ax = hx.copy().todense()
+    h = sp.linalg.hadamard(2**nQubits)/(2.**(nQubits/2.))
+
     # Loop over time
     for i in range(0, int(sp.floor(N))):
         t = i*dt
@@ -255,9 +275,18 @@ def ForRuth(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
         # Run through coefficient indices backwards
         for idx in range(len(acoef))[::-1]:
             if bcoef[idx] != 0:
-                Psi = expm(bcoef[idx]*cz*(hz+hzz))*Psi
+                # Psi = expm(bcoef[idx]*(hz + hzz))*Psi
+                # A = bcoef[idx]*cz*(hz + hzz).copy()
+                # A.setdiag(np.exp(A.diagonal()))
+                Az = bcoef[idx]*cz*(hz + hzz)
+                Az.setdiag(np.exp(Az.diagonal()))
+                Psi = Az*Psi
             if acoef[idx] != 0:
-                Psi = expm(acoef[idx]*cx*hx)*Psi
+                # Psi = expm(acoef[idx]*hx)*Psi
+                Ax = acoef[idx]*cx*hx.todense()
+                Ax = h*Ax*h
+                Ax = np.matrix(np.diag(np.exp(np.diag(Ax))))
+                Psi = (h*Ax*h)*Psi
 
         # Get eigendecomposition of true Hamiltonian if necessary
         if (errchk or outinfo['mingap']
@@ -381,9 +410,13 @@ def BCM(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
               -0.107654717879545729464023522278,
               0.0254278113893309936197644680648]
     bclist.append(0.5 - np.sum(bclist))
-    print len(bclist), bcoef[39:19:-1].size
     bcoef[0:19] = bclist
     bcoef[38:19:-1] = bclist[0:19]
+
+    # Holder operators (requires more memory, but it's faster)
+    Az = (hz + hzz).copy()
+    Ax = hx.copy().todense()
+    h = sp.linalg.hadamard(2**nQubits)/(2.**(nQubits/2.))
 
     # Loop over time
     for i in range(0, int(sp.floor(N))):
@@ -397,9 +430,18 @@ def BCM(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
         # Run through coefficient indices backwards
         for idx in range(len(acoef))[::-1]:
             if bcoef[idx] != 0:
-                Psi = expm(bcoef[idx]*cz*(hz+hzz))*Psi
+                # Psi = expm(bcoef[idx]*(hz + hzz))*Psi
+                # A = bcoef[idx]*cz*(hz + hzz).copy()
+                # A.setdiag(np.exp(A.diagonal()))
+                Az = bcoef[idx]*cz*(hz + hzz)
+                Az.setdiag(np.exp(Az.diagonal()))
+                Psi = Az*Psi
             if acoef[idx] != 0:
-                Psi = expm(acoef[idx]*cx*hx)*Psi
+                # Psi = expm(acoef[idx]*hx)*Psi
+                Ax = acoef[idx]*cx*hx.todense()
+                Ax = h*Ax*h
+                Ax = np.matrix(np.diag(np.exp(np.diag(Ax))))
+                Psi = (h*Ax*h)*Psi
 
         # Get eigendecomposition of true Hamiltonian if necessary
         if (errchk or outinfo['mingap']

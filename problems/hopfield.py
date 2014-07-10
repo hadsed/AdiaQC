@@ -12,7 +12,7 @@ import scipy as sp
 def parameters(cmdargs):
     """
     """
-    nQubits = 4
+    nQubits = 8
     T = 100.0
     #T = sp.arange(2,23,4.0) # Output a sequence of anneal times
     dt = 0.01*T
@@ -22,7 +22,7 @@ def parameters(cmdargs):
     progressout = 0 # Output simulation progress over anneal timesteps
 
     outputdir = 'data/hopfield/' # In relation to run.py
-    eigspecdat = 1 # Output data for eigspec
+    eigspecdat = 0 # Output data for eigspec
     eigspecplot = 0 # Plot eigspec
     eigspecnum = 2**nQubits # Number of eigenvalues to output
     fidelplot = 0 # Plot fidelity
@@ -30,7 +30,8 @@ def parameters(cmdargs):
     fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
     overlapdat = 0 # Output overlap data
     overlapplot = 0 # Plot overlap
-    solveMethod = 'BCM' # 'ExpPert', 'SuzTrot', 'ForRuth', 'BCM'
+    # solveMethod = 'ExpPert' # 'ExpPert', 'SuzTrot', 'ForRuth', 'BCM'
+    solveMethod = 'SuzTrot' # 'ExpPert', 'SuzTrot', 'ForRuth', 'BCM'
 
     probshow = 1 # Print final state probabilities to screen
     probout = 1 # Output probabilities to file
