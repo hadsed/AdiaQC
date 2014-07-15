@@ -12,8 +12,8 @@ import scipy as sp
 def parameters(cmdargs):
     """
     """
-    nQubits = 8
-    T = 100.0
+    nQubits = 4
+    T = 10.0
     #T = sp.arange(2,23,4.0) # Output a sequence of anneal times
     dt = 0.01*T
 
@@ -30,7 +30,7 @@ def parameters(cmdargs):
     fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
     overlapdat = 0 # Output overlap data
     overlapplot = 0 # Plot overlap
-    # solveMethod = 'ExpPert' # 'ExpPert', 'SuzTrot', 'ForRuth', 'BCM'
+    solveMethod = 'ExpPert' # 'ExpPert', 'SuzTrot', 'ForRuth', 'BCM'
     solveMethod = 'SuzTrot' # 'ExpPert', 'SuzTrot', 'ForRuth', 'BCM'
 
     probshow = 1 # Print final state probabilities to screen
@@ -58,7 +58,13 @@ def parameters(cmdargs):
                 [1,1,-1,-1,-1]]
     inputstate = [1,1,-1,1,1]
 
-    memories = sp.linalg.hadamard(neurons).tolist()
+    memories = [[1,-1,1,1,-1]+[0]*(nQubits-5),
+                [-1,1,-1,1,1]+[0]*(nQubits-5),
+                [1,1,-1,-1,-1]+[0]*(nQubits-5)]
+    inputstate = [1,1,-1,1,1]+[0]*(nQubits-5)
+
+    if nQubits % 2 == 0:
+        memories = sp.linalg.hadamard(neurons).tolist()
     inputstate = memories[0]
     # inputstate = [0]*neurons
     # memories = sp.array(memories)[[0,2]].tolist()

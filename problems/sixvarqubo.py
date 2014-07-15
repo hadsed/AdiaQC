@@ -32,6 +32,7 @@ def parameters(cmdargs):
     fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
     overlapdat = 0 # Output overlap data
     overlapplot = 0 # Plot overlap
+    solveMethod = 'ExpPert' # 'ExpPert', 'SuzTrot', 'ForRuth', 'BCM'
 
     probshow = 1 # Print final state probabilities to screen
 #### BUG ##### probshow requires probout
@@ -123,5 +124,6 @@ def parameters(cmdargs):
         'stateoverlap': None,
         'hzscale': None,
         'hzzscale': None,
-        'hxscale': None
+        'hxscale': None,
+        'solveMethod': solveMethod
         }

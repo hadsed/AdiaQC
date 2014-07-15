@@ -133,16 +133,18 @@ def SuzTrot(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
     expm = sla.expm
 
     # Hamiltonian coefficients
-    acoef = np.array([0, 1, 0, 0])
-    bcoef = np.array([0.5, 0.5, 0, 0])
+    # acoef = np.array([0, 1, 0, 0])
+    # bcoef = np.array([0.5, 0.5, 0, 0])
 
     # Holder operators (requires more memory, but it's faster)
     Az = (hz + hzz).copy()
     Ax = hx.copy().todense()
+
+    # Hadamard matrix
     h = sp.linalg.hadamard(2**nQubits)/(2.**(nQubits/2.))
 
     # Loop over time
-    for i in range(0, int(sp.floor(N))):
+    for i in xrange(0, int(sp.floor(N))):
         t = i*dt
         t0 = (i-1)*dt
         
@@ -150,21 +152,14 @@ def SuzTrot(nQubits, hz, hzz, hx, Psi, T, dt, errchk, eps, outinfo):
         cz = (-1j*dt)*t/T
         cx = (-1j*dt)*(1 - t/T)
 
-        # Run through coefficient indices backwards
-        for idx in range(len(acoef))[::-1]:
-            if bcoef[idx] != 0:
-                # Psi = expm(bcoef[idx]*(hz + hzz))*Psi
-                # A = bcoef[idx]*cz*(hz + hzz).copy()
-                # A.setdiag(np.exp(A.diagonal()))
-                Az = bcoef[idx]*cz*(hz + hzz)
-                Az.setdiag(np.exp(Az.diagonal()))
-                Psi = Az*Psi
-            if acoef[idx] != 0:
-                # Psi = expm(acoef[idx]*hx)*Psi
-                Ax = acoef[idx]*cx*hx.todense()
-                Ax = h*Ax*h
-                Ax = np.matrix(np.diag(np.exp(np.diag(Ax))))
-                Psi = (h*Ax*h)*Psi
+        # Construct Z and X operators
+        Az = 0.5*cz*(hz + hzz)
+        Az.setdiag(np.exp(Az.diagonal()))
+        Ax = h*(cx*hx.todense())*h
+        Ax = h*np.matrix(np.diag(np.exp(np.diag(Ax))))*h
+
+        # Apply
+        Psi = (Az*Ax*Az)*Psi
 
         # Get eigendecomposition of true Hamiltonian if necessary
         if (errchk or outinfo['mingap']

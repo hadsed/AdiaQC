@@ -67,6 +67,7 @@ def parameters(cmdargs):
     fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
     overlapdat = 0 # Output overlap data
     overlapplot = 0 # Plot overlap
+    solveMethod = 'ExpPert' # 'ExpPert', 'SuzTrot', 'ForRuth', 'BCM'
 
     # Output directory stuff
     probdir = 'data/hopfield_var_gamma_new_hop5/n'+str(nQubits)+'p'+\
@@ -184,5 +185,6 @@ def parameters(cmdargs):
         'stateoverlap': None,
         'hzscale': hzscale,
         'hzzscale': hzscale,
-        'hxscale': hzscale
+        'hxscale': hzscale,
+        'solveMethod': solveMethod
         }

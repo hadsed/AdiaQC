@@ -67,6 +67,7 @@ def parameters(cmdargs):
     fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
     overlapdat = 0 # Output overlap data
     overlapplot = 0 # Plot overlap
+    solveMethod = 'ExpPert' # 'ExpPert', 'SuzTrot', 'ForRuth', 'BCM'
 
     # Output directory stuff
     probdir = 'data/hopfield_gamma_random/'+hparams['learningRule']
@@ -175,5 +176,6 @@ def parameters(cmdargs):
         'probshow': probshow,
         'probout': probout,
         'mingap': mingap,
-        'stateoverlap': None
+        'stateoverlap': None,
+        'solveMethod': solveMethod
         }
