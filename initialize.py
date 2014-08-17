@@ -16,8 +16,10 @@ def InitialState(delta):
     " Set initial state as ground state of transverse field Hamiltonian. " 
 
     # Get ground state of H
-    eigval, eigvec = spla.eigsh(delta)
-    # eigval, eigvec = sp.linalg.eigh(delta.todense())
+    if delta.shape[0] > 4:
+        eigval, eigvec = spla.eigsh(delta)
+    else:
+        eigval, eigvec = sp.linalg.eigh(delta.todense())
     sortperm = eigval.argsort()
     eigval = eigval[sortperm]
     eigvec = eigvec[:, sortperm]

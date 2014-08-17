@@ -12,7 +12,7 @@ import scipy as sp
 def parameters(cmdargs):
     """
     """
-    nQubits = 4
+    nQubits = 8
     T = 10.0
     #T = sp.arange(2,23,4.0) # Output a sequence of anneal times
     dt = 0.01*T
@@ -21,17 +21,17 @@ def parameters(cmdargs):
     binary = 0 # Save output files as binary Numpy format
     progressout = 0 # Output simulation progress over anneal timesteps
 
-    outputdir = 'data/hopfield/' # In relation to run.py
-    eigspecdat = 0 # Output data for eigspec
+    outputdir = 'data/hopfield_hamming_inv/' # In relation to run.py
+    eigspecdat = 1 # Output data for eigspec
     eigspecplot = 0 # Plot eigspec
-    eigspecnum = 2**nQubits # Number of eigenvalues to output
+    eigspecnum = 16 # Number of eigenvalues to output
     fidelplot = 0 # Plot fidelity
     fideldat = 0 # Output fidelity data
     fidelnumstates = 2**nQubits # Check fidelity with this number of eigenstates
     overlapdat = 0 # Output overlap data
     overlapplot = 0 # Plot overlap
     solveMethod = 'ExpPert' # 'ExpPert', 'SuzTrot', 'ForRuth', 'BCM'
-    solveMethod = 'SuzTrot' # 'ExpPert', 'SuzTrot', 'ForRuth', 'BCM'
+    # solveMethod = 'SuzTrot' # 'ExpPert', 'SuzTrot', 'ForRuth', 'BCM'
 
     probshow = 1 # Print final state probabilities to screen
     probout = 1 # Output probabilities to file
@@ -53,21 +53,17 @@ def parameters(cmdargs):
     # Construct network Ising parameters
     neurons = nQubits
 
-    memories = [[1,-1,1,1,-1],
-                [-1,1,-1,1,1],
-                [1,1,-1,-1,-1]]
-    inputstate = [1,1,-1,1,1]
+    # if nQubits % 2 == 0:
+    #     memories = sp.linalg.hadamard(neurons).tolist()
+    # inputstate = memories[0]
 
-    memories = [[1,-1,1,1,-1]+[0]*(nQubits-5),
-                [-1,1,-1,1,1]+[0]*(nQubits-5),
-                [1,1,-1,-1,-1]+[0]*(nQubits-5)]
-    inputstate = [1,1,-1,1,1]+[0]*(nQubits-5)
-
-    if nQubits % 2 == 0:
-        memories = sp.linalg.hadamard(neurons).tolist()
+    # memories = [[ 1,-1,-1, 1, 1,-1,-1, 1],
+    #             [-1,-1,-1, 1, 1,-1,-1, 1],
+    #             [ 1,-1,-1, 1, 1,-1,-1,-1]]
+    memories = [[ 1,-1,-1, 1,-1,-1,-1, 1],
+                [ 1,-1,-1, 1,-1,-1,-1, 1],
+                [ 1,-1,-1, 1,-1,-1,-1,-1]]
     inputstate = memories[0]
-    # inputstate = [0]*neurons
-    # memories = sp.array(memories)[[0,2]].tolist()
 
     print("Input:")
     print(spins2bitstr(inputstate))
@@ -90,7 +86,8 @@ def parameters(cmdargs):
 
     # Hebb rule - even better matrix style
     memMat = sp.matrix(memories).T
-    beta = sp.triu(memMat*memMat.T)/float(neurons)
+    beta = (sp.triu(memMat*memMat.T)-len(memories)*sp.eye(nQubits))/float(neurons)
+    print beta
 
     # # Hebb rule - matrix style
     # for m, mem in enumerate(memories):
