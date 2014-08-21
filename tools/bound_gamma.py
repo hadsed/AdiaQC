@@ -64,12 +64,12 @@ neurons = 6
 patterns = 4
 rand = False
 
-memories = [[1, -1, -1, 1, -1, -1],
-            [-1, -1, -1, 1, -1, -1],
+memories = [[1, -1, 1, 1, -1, -1],
+            # [-1, -1, -1, 1, -1, -1],
             # [-1, 1, -1, 1, -1, 1],
             # [-1, 1, -1, -1, -1, -1],
-            [1, 1, 1, -1, -1, -1],
-            [-1, 1, 1, 1, 1, 1]]
+            # [1, 1, 1, -1, -1, -1],
+            [-1, 1, 1, 1, 1, -1]]
 
 if rand is True:
     memories = [ [ 2*sp.random.random_integers(0,1)-1 
@@ -82,8 +82,8 @@ print memories
 
 # Ising matrix
 # J = hebb(neurons, memories)
-J = stork(neurons, memories)
-# J = proj(neurons, memories)
+#J = stork(neurons, memories)
+J = proj(neurons, memories)
 print "Ising matrix:"
 print -J
 print "Ising energy:"
@@ -112,11 +112,11 @@ for vec in alllist:
 # Set input state
 inp = np.matrix(memories[0]).T
 # Flip a random spin
-# inp[sp.random.random_integers(0,neurons-1)] *= -1
+inp[sp.random.random_integers(0,neurons-1)] *= -1
 # inp *= -1
 # inp = np.matrix(hadamard[-1]).T
 # Calculate bias energies
-step = 0.001
+step = 0.0001
 G = np.arange(0,1.+step,step)
 Eb = -G*(inp.T*inp)[0,0]
 Ej = -inp.T*J*inp
@@ -124,10 +124,21 @@ E = np.ravel(Eb+Ej)
 print "Input:"
 print Ej[0,0], inp.T
 print "Gamma / Total Energy threshold:"
-print (G[E >= alllist[0][0]][::-1][0], E[E >= alllist[0][0]][::-1][0])
+Gthresh = G[E >= alllist[0][0]][::-1][0]
+Ethresh = E[E >= alllist[0][0]][::-1][0]
+print (Gthresh, Ethresh)
 # print "All G-energy pairs:"
 # print [ np.around(k, 5).tolist() for k in zip(G,E) ]
 test = np.ravel(inp)
 # test[sp.random.random_integers(0,neurons-1)] *= -1
-print hamdist(test, memories[0])
-print np.inner(test, memories[0])
+print "Hamming dist / Overlap of input <-> ans"
+print (hamdist(test, memories[0]), np.inner(test, memories[0]))
+eps = 0.001
+print "Other guys again (with bias):"
+alllist = []
+for vec in spinstr:
+    v = np.matrix(vec).T
+    alllist.append([-np.sum(v.T*J*v)-(Gthresh+eps)*np.sum(inp.T*v), vec])
+alllist = sorted(alllist, key=lambda x: x[0])
+for vec in alllist:
+    print vec
