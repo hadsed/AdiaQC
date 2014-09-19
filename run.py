@@ -306,28 +306,28 @@ if isinstance(T, collections.Iterable):
     if outinfo['fidplot']: 
         solve.output.PlotFidelity(fidelitydataplot, outinfo['outdir'],
                                   outinfo['fidnumstates'])
-# Determine if we're doing multiple simulations over T
+# Determine if we're doing multiple simulations over Gamma
 elif hzscale is not None:
     # Keep the fidelity data somewhere
     if (outinfo['fiddat'] or outinfo['fidplot']):
         fidelitydata = []
-    # Go through all the T's
+    # Go through all the Gamma's
     for i in range(0, len(hzscale)): 
         # Solve the Schrodinger equation, get back the final state and mingap
         if solveMethod == 'ExpPert':
-            Psi, mingap = solve.ExpPert(nQubits, hz, hzz, hx, Psi0, 
+            Psi, mingap = solve.ExpPert(nQubits, hzscale[i]*hz, hzz, hx, Psi0, 
                                         T, dt, errchk, eps, 
                                         outinfo)
         elif solveMethod == 'SuzTrot':
-            Psi, mingap = solve.SuzTrot(nQubits, hz, hzz, hx, Psi0, 
+            Psi, mingap = solve.SuzTrot(nQubits, hzscale[i]*hz, hzz, hx, Psi0, 
                                         T, dt, errchk, eps, 
                                         outinfo)
         elif solveMethod == 'ForRuth':
-            Psi, mingap = solve.ForRuth(nQubits, hz, hzz, hx, Psi0, 
+            Psi, mingap = solve.ForRuth(nQubits, hzscale[i]*hz, hzz, hx, Psi0, 
                                         T, dt, errchk, eps, 
                                         outinfo)
         elif solveMethod == 'BCM':
-            Psi, mingap = solve.BCM(nQubits, hz, hzz, hx, Psi0, 
+            Psi, mingap = solve.BCM(nQubits, hzscale[i]*hz, hzz, hx, Psi0, 
                                     T, dt, errchk, eps, 
                                     outinfo)
         else:
@@ -338,12 +338,9 @@ elif hzscale is not None:
         esout_pref = outinfo['outdir']+'/'
         esout = esout_pref+'eigenspectrum.dat'
         esrenamed = esout_pref+'eigspecG'+str(hzscale[i])+'.dat'
-        print esout, esrenamed
-        print outinfo['binary']
         if outinfo['binary']:
             esout += '.npy'
             esrenamed += '.npy'
-        print esout, esrenamed
         os.rename(esout, esrenamed)
         # Do fidelity stuff
         if outinfo['fiddat'] or outinfo['fidplot']:
