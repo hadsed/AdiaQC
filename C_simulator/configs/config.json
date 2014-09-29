@@ -1,0 +1,15 @@
+/* This is a test problem description */
+{
+    "scalars" : {
+        "nq" : 3,
+        "lrgs" : 4,
+        "t" : 10.0,
+        "dt" : 0.1,
+        "print" : true
+    },
+    "coefficients" : {
+        "alpha" : [0.112, 0.234, 0.253],
+        "beta" : [0.453, 0.533, -0.732],
+        "delta" : [1.0, 1.0, 1.0]
+    }
+}

@@ -1,0 +1,22 @@
+/*
+    Two qubit example
+    Expected output:
+        psi[0] = 9.92924606E-01
+        psi[1] = 3.53141713E-03
+        psi[2] = 3.53141713E-03
+        psi[4] = 1.25597723E-05
+*/
+{
+    "scalars" : {
+        "nq" : 2,
+        "lrgs" : 4,
+        "print" : true,
+        "t" : 10.0,
+        "dt" : 0.1
+    },
+    "coefficients" : {
+        "alpha" : [1.0, 1.0],
+        "beta" : [0],
+        "delta" : [1.0, 1.0]
+    }
+}
