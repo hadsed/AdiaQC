@@ -16,6 +16,23 @@
 //TODO: include orbtimer?
 
 
+// from: http://stackoverflow.com/questions/111928/is-there-a-printf-converter-to-print-in-binary-format
+// author: EvilTeach, Daniel Lyons
+/*
+const char *byte_to_binary(int x) {
+  static char b[9];
+  b[0] = '\0';
+
+  int z;
+  for (z = 128; z > 0; z >>= 1)
+    {
+      strcat(b, ((x & z) == z) ? "1" : "0");
+    }
+
+  return b;
+}
+*/
+
 inline void scaleVec( fftw_complex *vec, const double s, const uint64_t N ){
     uint64_t i;
 
@@ -124,24 +141,15 @@ int main( int argc, char **argv ){
     uint64_t nQ=3, N, L=4;
     uint64_t testi, testj, dim;
     int *fft_dims;
-    int dzi, dzj;
-    int flag, flag2, prnt=0;
+    int dzi, dzj; //TODO: consider using smaller vars for flags and these
+    int prnt=0;
     fftw_plan plan;
     
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                          Parse configuration file
     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-    //DEBUG
-    
-    nQ = 1;
-    prnt = 1;
-    al = (double *)malloc( nQ*sizeof(double) );
-    de = (double *)malloc( nQ*sizeof(double) );
-    al[0] = 1.0;
-    de[0] = 1.0;
-    
     //TODO: going to need logic to handle incomplete config files
-    /*
+    //TODO: put all os this in it's own function?
     JSON_Value *root_value = NULL;
     JSON_Object *root_object;
     JSON_Array *array;
@@ -159,9 +167,9 @@ int main( int argc, char **argv ){
     T = json_object_dotget_number( root_object, "scalars.t" );
     dt = json_object_dotget_number( root_object, "scalars.dt" );
 
-    al = (double *)malloc( nQ*sizeof(double) );
-    de = (double *)malloc( nQ*sizeof(double) );
-    if( nQ > 1) be = (double *)malloc( (nQ*(nQ-1)/2)*sizeof(double) );
+    al   = (double *)malloc( nQ*sizeof(double) );
+    de   = (double *)malloc( nQ*sizeof(double) );
+    be   = (double *)malloc( (nQ*(nQ-1)/2)*sizeof(double) );
 
     array = json_object_dotget_array( root_object, "coefficients.alpha" );
     if( array != NULL ){
@@ -170,12 +178,10 @@ int main( int argc, char **argv ){
         }
     }
 
-    if( nQ > 1 ){
-        array = json_object_dotget_array( root_object, "coefficients.beta" );
-        if( array != NULL ){
-            for( i = 0; i < json_array_get_count(array); i++ ){
-                be[i] = -json_array_get_number( array, i );
-            }
+    array = json_object_dotget_array( root_object, "coefficients.beta" );
+    if( array != NULL ){
+        for( i = 0; i < json_array_get_count(array); i++ ){
+            be[i] = -json_array_get_number( array, i );
         }
     }
 
@@ -187,28 +193,6 @@ int main( int argc, char **argv ){
     }
 
     json_value_free( root_value );
-    */
-
-    /*
-    //DEBUG
-    printf("al = ");
-    for( i = 0; i < nQ; i++ ){
-        printf("%f ", al[i] );
-    }
-    printf("\n\n");
-
-    printf("de = ");
-    for( i = 0; i < nQ; i++ ){
-        printf("%f ", de[i] );
-    }
-    printf("\n\n");
-
-    printf("be = ");
-    for( i = 0; i < (nQ*(nQ-1))/2; i++ ){
-        printf("%f ", be[i] );
-    }
-    printf("\n\n");
-    */
 
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         Compute the Hamiltonian and state vector for the simulation
@@ -219,13 +203,13 @@ int main( int argc, char **argv ){
         TODO: keep track of local size and local base
     */
     dim = 1 << nQ;
-    //factor = 1.0/sqrt( dim );
-    factor = 1.0;
+    factor = 1.0/sqrt( dim );
+    /* factor = 1.0; */
     
     fft_dims = (int *)malloc( nQ*sizeof(int) );
     psi  = (fftw_complex *)malloc( (dim)*sizeof(fftw_complex) );
-    hz   = (double *)malloc( (dim)*sizeof(double) );
-    hhxh = (double *)malloc( (dim)*sizeof(double) );
+    hz   = (double *)calloc( (dim),sizeof(double) );
+    hhxh = (double *)calloc( (dim),sizeof(double) );
 
     for( i = 0; i < nQ; i++ ){
         fft_dims[i] = 2;
@@ -233,9 +217,14 @@ int main( int argc, char **argv ){
 
     plan = fftw_plan_dft( nQ, fft_dims, psi, psi, FFTW_FORWARD, FFTW_MEASURE );
 
+    /* for( j = 0; j < dim; j++ ){ */
+    /*   printf( "be[%d]: %f\n", j, be[j]); */
+    /* } */
     /*
         Assemble Hamiltonian and state vector
     */
+    //TODO: put all of this into its own function?
+    /*
     flag2 = 1;
     uint64_t bcount = 0;
     for( i = 0; i < nQ; i++ ){
@@ -269,6 +258,31 @@ int main( int argc, char **argv ){
             flag2 = 0;
         }
     }
+    */
+
+    uint64_t bcount;
+    for( k = 0; k < dim; k++ ){
+
+        //TODO: when parallelized, k in dzi test will be ~(k + base)
+        bcount = 0;
+        for( i = 0; i < nQ; i++ ){
+            testi = 1 << (nQ - i - 1);
+            dzi = ((k/testi) % 2 == 0) ? 1 : -1;
+
+            hz[k] += al[i] * dzi;
+            hhxh[k] += de[i] * dzi;
+
+            for( j = i; j < nQ; j++ ){
+                testj = 1 << (nQ - j - 1);
+                dzj = ((k/testj) % 2 == 0) ? 1 : -1;
+
+                hz[k] += be[bcount] * dzi * dzj;
+                bcount++;
+            }
+        }
+
+        psi[k] = factor;
+    }
 
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                             Run the Simulation
@@ -278,6 +292,9 @@ int main( int argc, char **argv ){
     N = (uint64_t)(T / dt);
     //plan = fftw_plan_dft( nQ, fft_dims, psi, psi, FFTW_FORWARD, FFTW_ESTIMATE );
     //plan = fftw_plan_dft( nQ, fft_dims, psi, psi, FFTW_FORWARD, FFTW_MEASURE );
+    /* for( j = 0; j < dim; j++ ){ */
+    /*   printf( "hz[%d]: %f\n", j, hz[j]); */
+    /* } */
     for( i = 0; i < N; i++ ){
         t = i*dt;
         //t0 = (i-1)*dt;
@@ -288,17 +305,26 @@ int main( int argc, char **argv ){
 
         //Evolve system
         expMatTimesVec( psi, hz, cz, dim ); //apply Z part
+        /* for( j = 0; j < dim; j++ ){ */
+        /*     printf( "before: psi[%d] = (%f, %f)\t%f\n", j, creal(psi[j]), cimag(psi[j]), cabs(psi[j]*psi[j]) ); */
+        /* } */
         fftw_execute( plan );
+        /* for( j = 0; j < dim; j++ ){ */
+        /*     printf( "after: psi[%d] = (%f, %f)\t%f\n", j, creal(psi[j]), cimag(psi[j]), cabs(psi[j]*psi[j]) ); */
+        /* } */
         //_fwht( psi, 0, dim );
         expMatTimesVec( psi, hhxh, cx, dim ); //apply X part
         fftw_execute( plan );
         //_fwht( psi, 0, dim );
         expMatTimesVec( psi, hz, cz, dim ); //apply Z part
         scaleVec( psi, 1.0/dim, dim );
+        /* for( j = 0; j < dim; j++ ){ */
+        /*     printf( "psi[%d] = (%f, %f)\t%f\n", j, creal(psi[j]), cimag(psi[j]), cabs(psi[j]*psi[j]) ); */
+        /* } */
     }
     fftw_destroy_plan( plan );
     //TODO: need to figure out where to do this, beginning or here
-    scaleVec( psi, 1.0/sqrt(dim), dim );
+    //    scaleVec( psi, 1.0/sqrt(dim), dim );
 
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                         Check solution and clean up
@@ -308,18 +334,28 @@ int main( int argc, char **argv ){
     //TODO: report locations in state vector
     if( prnt && nQ < 6 ){
         for( i = 0; i < dim; i++ ){
-            printf( "psi[%d] = (%f, %f)\t%f\n", i, creal(psi[i]), cimag(psi[i]), cabs(psi[i]*psi[i]) );
-            //printf( "psi[%d] = (%f, %f)\t%f\n", i, creal(psi[i]), cimag(psi[i]), cabs(psi[i]) );
+            printf( "psi[%d] = (%f, %f)\t%f\n", 
+		    i,
+		    creal(psi[i]), 
+		    cimag(psi[i]), 
+		    cabs(psi[i]*psi[i])
+		    /*byte_to_binary(i)*/ );
         }
     } else {
         uint64_t *largest = (uint64_t *)calloc( L, sizeof(uint64_t) );
         findLargest( largest, psi, dim, L );
-        for( i = 0; i < L; i++ ){
-            printf( "psi[%d] = (%f, %f)\t%f\n", largest[i], creal( psi[ largest[i] ] ), cimag( psi[ largest[i] ] ), cabs( psi[ largest[i] ] ) );
+        for( i = 0; i < L; ++i ){
+            printf( "%1.10f\t%d\tpsi[%d] = (%f, %f)\t\n",
+		    /*byte_to_binary(largest[i]),*/
+		    cabs( psi[largest[L-1-i]]*psi[largest[L-1-i]] ),
+		    i,
+		    largest[L-1-i],
+		    creal( psi[largest[L-1-i]] ), 
+		    cimag( psi[largest[L-1-i]] )
+		     );
         }
         free( largest );
     }
-
     /*
         Free work space.
     */
