@@ -183,7 +183,6 @@ int main( int argc, char **argv ){
     for( i = 0; i < nQ; i++ ){
         fft_dims[i] = 2;
     }
-    printf("Built data vectors\n");
 
     plan = fftw_plan_dft( nQ, fft_dims, psi, psi, FFTW_FORWARD, FFTW_MEASURE );
 
