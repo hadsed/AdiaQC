@@ -17,7 +17,11 @@
 // from: http://stackoverflow.com/questions/111928/is-there-a-printf-converter-to-print-in-binary-format
 // author: EvilTeach, Daniel Lyons
 /*
+<<<<<<< HEAD
 const char *byte_to_binary( int x ){
+=======
+const char *byte_to_binary(int x) {
+>>>>>>> origin/master
     static char b[9];
     b[0] = '\0';
 
@@ -115,13 +119,21 @@ int main( int argc, char **argv ){
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                          Parse configuration file
     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+<<<<<<< HEAD
 
+=======
+    //TODO: going to need logic to handle incomplete config files
+>>>>>>> origin/master
     if( argc < 2 ){
         fprintf( stderr, "Need a json configuration file. Terminating...\n" );
         return 1;
     }
 
+<<<<<<< HEAD
     /* Parse file and populate applicable data structures */
+=======
+    /* Parse config file and populate appropriate data structures */
+>>>>>>> origin/master
     {
         JSON_Value *root_value = NULL;
         JSON_Object *root_object;
@@ -190,9 +202,13 @@ int main( int argc, char **argv ){
     /*
         Assemble Hamiltonian and state vector
     */
+<<<<<<< HEAD
+=======
+    uint64_t bcount;
+>>>>>>> origin/master
     for( k = 0; k < dim; k++ ){
-
         //TODO: when parallelized, k in dzi test will be ~(k + base)
+
         bcount = 0;
         for( i = 0; i < nQ; i++ ){
             testi = 1 << (nQ - i - 1);
@@ -259,7 +275,11 @@ int main( int argc, char **argv ){
         uint64_t *largest = (uint64_t *)calloc( L, sizeof(uint64_t) );
         findLargest( largest, psi, dim, L );
         for( i = 0; i < L; ++i ){
+<<<<<<< HEAD
             printf( "psi[%d] = (%f, %f)\t%1.10f\n",
+=======
+            printf( "psi[%d] = (%f, %f)\t%f\n",
+>>>>>>> origin/master
 		    i,
 		    creal( psi[largest[L-1-i]] ), 
 		    cimag( psi[largest[L-1-i]] ),
