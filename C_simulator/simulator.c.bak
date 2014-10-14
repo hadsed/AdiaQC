@@ -8,13 +8,29 @@
 #include <stdint.h>
 #include <math.h>
 #include <complex.h>
+#include <fftw3.h>
 //#include <mpi.h>
 #include "parson.h"
 //TODO: include orbtimer?
 
 
-//TODO: if needed, these can easily be embedded in the simulation loop
-void scaleVec( double complex *vec, const double s, const uint64_t N ){
+// from: http://stackoverflow.com/questions/111928/is-there-a-printf-converter-to-print-in-binary-format
+// author: EvilTeach, Daniel Lyons
+/*
+const char *byte_to_binary( int x ){
+    static char b[9];
+    b[0] = '\0';
+
+    int z;
+    for( z = 128; z > 0; z >>= 1 ){
+        strcat( b, ( (x & z) == z ) ? "1" : "0" );
+    }
+
+    return b;
+}
+*/
+
+void scaleVec( fftw_complex *vec, const double s, const uint64_t N ){
     uint64_t i;
 
     for( i = 0; i < N; i++ ){
@@ -22,39 +38,11 @@ void scaleVec( double complex *vec, const double s, const uint64_t N ){
     }
 }
 
-void expMatTimesVec( double complex *vec, const double *mat, const double complex cc, const uint64_t N ){
+void expMatTimesVec( fftw_complex *vec, const double *mat, const fftw_complex cc, const uint64_t N ){
     uint64_t i;
 
     for( i = 0; i < N; i++ ){
         vec[i] *= cexp( cc*mat[i] );
-    }
-}
-
-void FWHT( double complex *vec, const uint64_t nQ, const uint64_t dim ){
-    uint64_t i, iter;
-    uint64_t temp;
-    int test;
-    double complex veci;
-    
-    iter = 1;
-    while( iter <= nQ ){
-        temp = 1 << (nQ-iter);
-        
-        i = 0;
-        while( i < dim ){
-            veci = vec[i];
-            vec[i] += vec[i + temp];
-            vec[i + temp] = veci - vec[i + temp];
-            
-            test = ((i+1)/temp) & 1; //be careful, uint64_t vs int
-            i += 1 + ((-test) & temp);
-            //if( (i+1)/temp % 2 == 1 )
-            //    i += temp + 1;
-            //else
-            //    ++i;
-        }
-        
-        ++iter;
     }
 }
 
@@ -72,7 +60,7 @@ void addLarger( double value, uint64_t indx, uint64_t *list, double *mag_list, c
     mag_list[i] = value;
 }
 
-void findLargest( uint64_t *listN, const double complex *list, const uint64_t size, const uint64_t N ){
+void findLargest( uint64_t *listN, const fftw_complex *list, const uint64_t size, const uint64_t N ){
     uint64_t i;
     double temp;
     
@@ -90,6 +78,7 @@ void findLargest( uint64_t *listN, const double complex *list, const uint64_t si
     //dumpArray(listNth, nLargest);
     free( mag_list );
 }
+
 
 
 /*------------------------------------------------------------------
@@ -112,14 +101,15 @@ void findLargest( uint64_t *listN, const double complex *list, const uint64_t si
 int main( int argc, char **argv ){
     double *hz, *hhxh;     /* hamiltonian components */
     double *al, *be, *de; 
-    double complex *psi;   /* State vector */
-    double complex factor;
+    fftw_complex *psi;   /* State vector */
+    fftw_complex factor;
     double T = 10.0, dt = 0.1;
     uint64_t i, j, k, bcount;
     uint64_t nQ=3, N, L=4, dim;
-    int test, prnt=0;
+    int *fft_dims, prnt=0;
     uint64_t testi, testj;
     int dzi, dzj; //TODO: consider using smaller vars for flags and these
+    fftw_plan plan;
     
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                          Parse configuration file
@@ -184,9 +174,16 @@ int main( int argc, char **argv ){
     dim = 1 << nQ;
     factor = 1.0/sqrt( dim );
     
-    psi  = (double complex *)malloc( (dim)*sizeof(double complex) );
+    fft_dims = (int *)malloc( nQ*sizeof(int) );
+    psi  = (fftw_complex *)malloc( (dim)*sizeof(fftw_complex) );
     hz   = (double *)calloc( (dim),sizeof(double) );
     hhxh = (double *)calloc( (dim),sizeof(double) );
+
+    for( i = 0; i < nQ; i++ ){
+        fft_dims[i] = 2;
+    }
+
+    plan = fftw_plan_dft( nQ, fft_dims, psi, psi, FFTW_FORWARD, FFTW_MEASURE );
 
     /*
         Assemble Hamiltonian and state vector
@@ -197,18 +194,14 @@ int main( int argc, char **argv ){
         bcount = 0;
         for( i = 0; i < nQ; i++ ){
             testi = 1 << (nQ - i - 1);
-            //dzi = ((k/testi) % 2 == 0) ? 1 : -1;
-            test = k/testi & 1; //be careful, uint64_t vs int
-            dzi = (-test & -1) | (-(!test) & 1);
+            dzi = ((k/testi) % 2 == 0) ? 1 : -1;
 
             hz[k] += al[i] * dzi;
             hhxh[k] += de[i] * dzi;
 
             for( j = i; j < nQ; j++ ){
                 testj = 1 << (nQ - j - 1);
-                //dzj = ((k/testj) % 2 == 0) ? 1 : -1;
-                test = k/testj & 1; //be careful, uint64_t vs int
-                dzj = (-test & -1) | (-(!test) & 1);
+                dzj = ((k/testj) % 2 == 0) ? 1 : -1;
 
                 hz[k] += be[bcount] * dzi * dzj;
                 bcount++;
@@ -221,7 +214,7 @@ int main( int argc, char **argv ){
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                             Run the Simulation
     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-    double complex cz, cx;
+    fftw_complex cz, cx;
     double t;
     N = (uint64_t)(T / dt);
     for( i = 0; i < N; i++ ){
@@ -234,9 +227,9 @@ int main( int argc, char **argv ){
 
         //Evolve system
         expMatTimesVec( psi, hz, cz, dim ); //apply Z part
-        FWHT( psi, nQ, dim );
+        fftw_execute( plan );
         expMatTimesVec( psi, hhxh, cx, dim ); //apply X part
-        FWHT( psi, nQ, dim );
+        fftw_execute( plan );
         expMatTimesVec( psi, hz, cz, dim ); //apply Z part
         
         /* 
@@ -245,6 +238,7 @@ int main( int argc, char **argv ){
         */
         scaleVec( psi, 1.0/dim, dim );
     }
+    fftw_destroy_plan( plan );
 
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                         Check solution and clean up
@@ -275,7 +269,8 @@ int main( int argc, char **argv ){
     /*
         Free work space.
     */
-    free( psi );
+    fftw_free( psi );
+    free( fft_dims );
     free( hz );
     free( hhxh );
 
