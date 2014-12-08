@@ -1,5 +1,17 @@
 To compile, type the following,
-    gcc -o sim simulator.c parson.c -lfftw3 -lm
+    gcc -o SIM -O2 simulator.c parson.c -lfftw3 -lm
 
 You need fftw installed to compile this. The "parson" files
 are for parsing the config files.
+
+
+
+
+To compile MPI version, type the following,
+    mpicc -o MPI-SIM -O2 simulator_mpi.c parson.c -lfftw3_mpi -lfftw3 -lm
+
+To run,
+    mpirun -n <# of processes> ./MPI-SIM <config-file>
+
+You need fftw installed with mpi to compile this.
+The "parson" files are for parsing the config files.

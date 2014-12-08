@@ -264,7 +264,7 @@ int main( int argc, char **argv ){
         findLargest( largest, psi, dim, L );
         for( i = 0; i < L; ++i ){
             printf( "psi[%d] = (%f, %f)\t%f\n",
-		    i,
+		    largest[L-1-i],
 		    creal( psi[largest[L-1-i]] ), 
 		    cimag( psi[largest[L-1-i]] ),
 		    cabs( psi[largest[L-1-i]]*psi[largest[L-1-i]] ) );
