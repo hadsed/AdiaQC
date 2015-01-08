@@ -30,7 +30,7 @@ const char *byte_to_binary( int x ){
 }
 */
 
-inline void scaleVec( fftw_complex *vec, const double s, const uint64_t N ){
+void scaleVec( fftw_complex *vec, double s, uint64_t N ){
     uint64_t i;
 
     for( i = 0; i < N; i++ ){
@@ -38,7 +38,7 @@ inline void scaleVec( fftw_complex *vec, const double s, const uint64_t N ){
     }
 }
 
-inline void expMatTimesVec( fftw_complex *vec, const double *mat, const fftw_complex cc, const uint64_t N ){
+void expMatTimesVec( fftw_complex *vec, const double *mat, fftw_complex cc, uint64_t N ){
     uint64_t i;
 
     for( i = 0; i < N; i++ ){
@@ -50,7 +50,7 @@ inline void expMatTimesVec( fftw_complex *vec, const double *mat, const fftw_com
 //from: http://www.dreamincode.net/forums/topic/61496-find-n-max-elements-in-unsorted-array/
 //author: baavgai
 //date: 2014-09-08, 1630
-void addLarger( double value, uint64_t indx, uint64_t *list, double *mag_list, const uint64_t size ){
+void addLarger( double value, uint64_t indx, uint64_t *list, double *mag_list, uint64_t size ){
     uint64_t i = 0;
     while( i < size-1 && value > mag_list[i+1] ){
         mag_list[i] = mag_list[i+1];
@@ -61,7 +61,7 @@ void addLarger( double value, uint64_t indx, uint64_t *list, double *mag_list, c
     mag_list[i] = value;
 }
 
-void findLargest( uint64_t *listN, const fftw_complex *list, const uint64_t size, const uint64_t N ){
+void findLargest( uint64_t *listN, const fftw_complex *list, uint64_t size, uint64_t N ){
     uint64_t i;
     double temp;
     
@@ -179,6 +179,14 @@ int main( int argc, char **argv ){
     psi  = (fftw_complex *)malloc( (dim)*sizeof(fftw_complex) );
     hz   = (double *)calloc( (dim),sizeof(double) );
     hhxh = (double *)calloc( (dim),sizeof(double) );
+    /*
+    for( i = 0; i < dim; ++i ){
+        printf( "hz[%llu][%llu] = %f\n", i, i, hz[i] );
+    }
+    for( i = 0; i < dim; ++i ){
+        printf( "hhxh[%llu][%llu] = %f\n", i, i, hhxh[i] );
+    }
+    */
 
     for( i = 0; i < nQ; i++ ){
         fft_dims[i] = 2;
@@ -200,7 +208,10 @@ int main( int argc, char **argv ){
             hz[k] += al[i] * dzi;
             hhxh[k] += de[i] * dzi;
 
-            for( j = i; j < nQ; j++ ){
+            //TODO: bcount is not accurate
+            //      it is inculding the diagonal and shouldn't
+            //for( j = i; j < nQ; j++ ){
+            for( j = i+1; j < nQ; j++ ){
                 testj = 1 << (nQ - j - 1);
                 dzj = ((k/testj) % 2 == 0) ? 1 : -1;
 
@@ -211,6 +222,20 @@ int main( int argc, char **argv ){
             
         psi[k] = factor;
     }
+
+    /*
+    for( i = 0; i < dim; ++i ){
+        printf( "psi[%llu] = (%f, %f)\n", i, creal(psi[i]), cimag(psi[i]) );
+    }
+
+    for( i = 0; i < dim; ++i ){
+        printf( "hz[%llu][%llu] = %f\n", i, i, hz[i] );
+    }
+
+    for( i = 0; i < dim; ++i ){
+        printf( "hhxh[%llu][%llu] = %f\n", i, i, hhxh[i] );
+    }
+    */
 
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                             Run the Simulation

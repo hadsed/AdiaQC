@@ -9,8 +9,7 @@
 {
     "scalars" : {
         "nq" : 2,
-        "lrgs" : 4,
-        "print" : true,
+        "lrgs" : 2,
         "t" : 10.0,
         "dt" : 0.1
     },
