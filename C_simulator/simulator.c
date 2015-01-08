@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <math.h>
 #include <complex.h>
-#include <fftw3.h>
 //#include <mpi.h>
 #include "parson.h"
 //TODO: include orbtimer?
@@ -46,6 +45,33 @@ void expMatTimesVec( fftw_complex *vec, const double *mat, fftw_complex cc, uint
     }
 }
 
+void FWHT( double complex *vec, const uint64_t nQ, const uint64_t dim ){
+    uint64_t i, iter;
+    uint64_t temp;
+    int test;
+    double complex veci;
+    
+    iter = 1;
+    while( iter <= nQ ){
+        temp = 1 << (nQ-iter);
+        
+        i = 0;
+        while( i < dim ){
+            veci = vec[i];
+            vec[i] += vec[i + temp];
+            vec[i + temp] = veci - vec[i + temp];
+            
+            test = ((i+1)/temp) & 1; //be careful, uint64_t vs int
+            i += 1 + ((-test) & temp);
+            //if( (i+1)/temp % 2 == 1 )
+            //    i += temp + 1;
+            //else
+            //    ++i;
+        }
+        
+        ++iter;
+    }
+}
 
 //from: http://www.dreamincode.net/forums/topic/61496-find-n-max-elements-in-unsorted-array/
 //author: baavgai
@@ -81,7 +107,6 @@ void findLargest( uint64_t *listN, const fftw_complex *list, uint64_t size, uint
 }
 
 
-
 /*------------------------------------------------------------------
 - Config file format - simplify, don't need xml, but like the structure
 {
@@ -102,15 +127,14 @@ void findLargest( uint64_t *listN, const fftw_complex *list, uint64_t size, uint
 int main( int argc, char **argv ){
     double *hz, *hhxh;     /* hamiltonian components */
     double *al, *be, *de; 
-    fftw_complex *psi;   /* State vector */
-    fftw_complex factor;
+    double complex *psi;   /* State vector */
+    double complex factor;
     double T = 10.0, dt = 0.1;
     uint64_t i, j, k, bcount;
     uint64_t nQ=3, N, L=4, dim;
-    int *fft_dims, prnt=0;
+    int test, prnt=0;
     uint64_t testi, testj;
     int dzi, dzj; //TODO: consider using smaller vars for flags and these
-    fftw_plan plan;
     
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                          Parse configuration file
@@ -175,8 +199,7 @@ int main( int argc, char **argv ){
     dim = 1 << nQ;
     factor = 1.0/sqrt( dim );
     
-    fft_dims = (int *)malloc( nQ*sizeof(int) );
-    psi  = (fftw_complex *)malloc( (dim)*sizeof(fftw_complex) );
+    psi  = (double complex *)malloc( (dim)*sizeof(double complex) );
     hz   = (double *)calloc( (dim),sizeof(double) );
     hhxh = (double *)calloc( (dim),sizeof(double) );
     /*
@@ -188,12 +211,6 @@ int main( int argc, char **argv ){
     }
     */
 
-    for( i = 0; i < nQ; i++ ){
-        fft_dims[i] = 2;
-    }
-
-    plan = fftw_plan_dft( nQ, fft_dims, psi, psi, FFTW_FORWARD, FFTW_MEASURE );
-
     /*
         Assemble Hamiltonian and state vector
     */
@@ -203,7 +220,9 @@ int main( int argc, char **argv ){
         bcount = 0;
         for( i = 0; i < nQ; i++ ){
             testi = 1 << (nQ - i - 1);
-            dzi = ((k/testi) % 2 == 0) ? 1 : -1;
+            //dzi = ((k/testi) % 2 == 0) ? 1 : -1;
+            test = k/testi & 1; //be careful, uint64_t vs int
+            dzi = (-test & -1) | (-(!test) & 1);
 
             hz[k] += al[i] * dzi;
             hhxh[k] += de[i] * dzi;
@@ -213,7 +232,9 @@ int main( int argc, char **argv ){
             //for( j = i; j < nQ; j++ ){
             for( j = i+1; j < nQ; j++ ){
                 testj = 1 << (nQ - j - 1);
-                dzj = ((k/testj) % 2 == 0) ? 1 : -1;
+                //dzj = ((k/testj) % 2 == 0) ? 1 : -1;
+                test = k/testj & 1; //be careful, uint64_t vs int
+                dzj = (-test & -1) | (-(!test) & 1);
 
                 hz[k] += be[bcount] * dzi * dzj;
                 bcount++;
@@ -240,7 +261,7 @@ int main( int argc, char **argv ){
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                             Run the Simulation
     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-    fftw_complex cz, cx;
+    double complex cz, cx;
     double t;
     N = (uint64_t)(T / dt);
     for( i = 0; i < N; i++ ){
@@ -253,9 +274,9 @@ int main( int argc, char **argv ){
 
         //Evolve system
         expMatTimesVec( psi, hz, cz, dim ); //apply Z part
-        fftw_execute( plan );
+        FWHT( psi, nQ, dim );
         expMatTimesVec( psi, hhxh, cx, dim ); //apply X part
-        fftw_execute( plan );
+        FWHT( psi, nQ, dim );
         expMatTimesVec( psi, hz, cz, dim ); //apply Z part
         
         /* 
@@ -264,7 +285,6 @@ int main( int argc, char **argv ){
         */
         scaleVec( psi, 1.0/dim, dim );
     }
-    fftw_destroy_plan( plan );
 
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                         Check solution and clean up
@@ -284,7 +304,7 @@ int main( int argc, char **argv ){
         findLargest( largest, psi, dim, L );
         for( i = 0; i < L; ++i ){
             printf( "psi[%d] = (%f, %f)\t%f\n",
-		    i,
+		    largest[L-1-i],
 		    creal( psi[largest[L-1-i]] ), 
 		    cimag( psi[largest[L-1-i]] ),
 		    cabs( psi[largest[L-1-i]]*psi[largest[L-1-i]] ) );
@@ -295,8 +315,7 @@ int main( int argc, char **argv ){
     /*
         Free work space.
     */
-    fftw_free( psi );
-    free( fft_dims );
+    free( psi );
     free( hz );
     free( hhxh );
 

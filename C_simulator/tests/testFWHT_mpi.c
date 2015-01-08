@@ -162,7 +162,6 @@ void FWHT( fftw_complex *vec, const uint64_t nQ, const uint64_t dim ){
         ++iter;
     }
 }
-
 /* END FWHT METHODS */
 
 
