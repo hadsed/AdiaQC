@@ -5,6 +5,35 @@
 #include <complex.h>
 #include <fftw3-mpi.h>
 #include "parson.h"
+#include <time.h> //for timing purposes
+
+
+//MEMORY INFO
+typedef struct {
+    unsigned long size,resident,share,text,lib,data,dt;
+} statm_t;
+
+void read_off_memory_status(statm_t* result){
+    unsigned long dummy;
+    const char* statm_path = "/proc/self/statm";
+    FILE *f = fopen(statm_path,"r");  
+    
+    if(!f){
+        fprintf(stderr, statm_path);
+        abort();
+    }
+    
+    if(7 != fscanf(f,"%ld %ld %ld %ld %ld %ld %ld",
+                    &result->size,&result->resident,
+                    &result->share,&result->text,&result->lib,
+                    &result->data,&result->dt)){
+        fprintf(stderr, statm_path);
+        abort();
+    }
+    
+    fclose(f);
+}
+//MEMORY INFO
 
 typedef struct {
     uint64_t nQ;
@@ -169,6 +198,7 @@ int main( int argc, char **argv ){
     ptrdiff_t alloc_local, local_N0, local_0_start;
     ptrdiff_t local_N1, local_1_start;
     data_t *large, *largest;
+    clock_t begin, end;
 
     MPI_Init( &argc, &argv );
     fftw_mpi_init();
@@ -176,6 +206,10 @@ int main( int argc, char **argv ){
     MPI_Comm_rank( MPI_COMM_WORLD, &id );
     MPI_Comm_size( MPI_COMM_WORLD, &np );
     
+    if( id == 0 ){
+        begin = clock(); //TIMING
+    }
+
     /* Set up MPI data types for defined structs */
     {
         offsets[0] = 0;
@@ -251,6 +285,7 @@ int main( int argc, char **argv ){
             }
         }
 
+        //TODO: are there more things to be freed here?
         json_value_free( root_value );
     }
     MPI_Bcast( &sc, 1, SCALARS_T, 0, MPI_COMM_WORLD );
@@ -294,18 +329,13 @@ int main( int argc, char **argv ){
         for( i = 0; i < sc.nQ; i++ ){
             testi = 1 << (sc.nQ - i - 1);
             dzi = ( ((k+local_0_start)/testi) & 1 ) ? 1 : -1;
-            //test = k/testi & 1; //be careful, uint64_t vs int
-            //dzi = (-test & -1) | (-(!test) & 1);
 
             hz[k] += al[i] * dzi;
             hhxh[k] += de[i] * dzi;
 
-            //for( j = i; j < sc.nQ; j++ ){
             for( j = i+1; j < sc.nQ; j++ ){
                 testj = 1 << (sc.nQ - j - 1);
                 dzj = ( ((k+local_0_start)/testj) & 1 ) ? 1 : -1;
-                //test = k/testj & 1; //be careful, uint64_t vs int
-                //dzj = (-test & -1) | (-(!test) & 1);
 
                 hz[k] += be[bcount] * dzi * dzj;
                 bcount++;
@@ -314,6 +344,7 @@ int main( int argc, char **argv ){
             
         psi[k] = factor;
     }
+    free( al ); free( be ); free( de );
 
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                             Run the Simulation
@@ -347,6 +378,9 @@ int main( int argc, char **argv ){
         
         //scaleVec( psi, 1.0/dim, dim );
     }
+    free( hz ); free( hhxh );
+    fftw_destroy_plan( planT ); //transpose
+    fftw_destroy_plan( planU ); //transpose
 
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                         Check solution and clean up
@@ -356,6 +390,7 @@ int main( int argc, char **argv ){
         largest = (data_t *)malloc( np*sc.L*sizeof(data_t) );
 
     findLargestP( large, psi, ldim, sc.L, local_0_start );
+    fftw_free( psi );
 
     MPI_Gather( large, sc.L, DATA_T, largest, sc.L, DATA_T, 0, MPI_COMM_WORLD );
     if( id == 0 ){
@@ -365,18 +400,23 @@ int main( int argc, char **argv ){
         }
         findLargestL( large, largest, np*sc.L, sc.L ); //zero out large?
         for( i = 0; i < sc.L; ++i ){
-            printf( "|psi[%llu]| = %f\n", large[i].ndx, large[i].mag );
+            printf( "|psi[%llu]| = %f\n", large[sc.L-1-i].ndx, large[sc.L-1-i].mag );
         }
+        statm_t res;
+        read_off_memory_status( &res );
+        end = clock();
+        printf( "Total time: %f s\n", (double)(end - begin)/CLOCKS_PER_SEC );
+        printf( "Memory used: %ld kB\n", res.resident );
     }
 
-    /*
-        Free work space.
+    /* TODO: consider this approach if memory becomes an issue
+    uint64_t tnp = np;
+    while( tnp != 1 ){
+         
+        tnp >>= 1;
+    }
     */
-    fftw_destroy_plan( planT ); //transpose
-    fftw_destroy_plan( planU ); //transpose
-    fftw_free( psi );
-    free( hz ); free( hhxh );
-    free( al ); free( be ); free( de );
+
     free( large );
     if( id == 0 )
         free( largest );

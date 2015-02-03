@@ -9,6 +9,7 @@
 #include <math.h>
 #include <complex.h>
 #include "parson.h"
+#include <omp.h>
 #include <time.h> //for timing purposes
 
 
@@ -58,6 +59,7 @@ const char *byte_to_binary( int x ){
 void scaleVec( double complex *vec, double s, uint64_t N ){
     uint64_t i;
 
+    #pragma omp parallel for
     for( i = 0; i < N; i++ ){
         vec[i] *= s;
     }
@@ -66,43 +68,66 @@ void scaleVec( double complex *vec, double s, uint64_t N ){
 void expMatTimesVec( double complex *vec, const double *mat, double complex cc, uint64_t N ){
     uint64_t i;
 
+    #pragma omp parallel for
     for( i = 0; i < N; i++ ){
         vec[i] *= cexp( cc*mat[i] );
     }
 }
 
+void FWHT( double complex *vec, uint64_t nQ, const uint64_t dim ){
+    //const int N = 1 << log2N;
+    uint64_t stride, base, j;
+
+    //Cycle through stages with different butterfly strides
+    for( stride = dim / 2; stride >= 1; stride >>= 1 ){   
+        //Cycle through subvectors of (2 * stride) elements
+        for( base = 0; base < dim; base += 2 * stride ){
+            //Butterfly index within subvector of (2 * stride) size
+            //#pragma omp parallel for //private(j)
+            for( j = 0; j < stride; j++ ){   
+                uint64_t i0 = base + j +      0;  
+                uint64_t i1 = base + j + stride;
+
+                double complex T1 = vec[i0];
+                double complex T2 = vec[i1];
+                vec[i0] = T1 + T2; 
+                vec[i1] = T1 - T2; 
+            }
+        }
+    }   
+}
+
+/*
 void FWHT( double complex *vec, const uint64_t nQ, const uint64_t dim ){
     uint64_t i, iter;
     uint64_t temp;
     int test;
     double complex veci;
     
-    iter = 1UL;
-    while( iter <= nQ ){
+    //iter = 1UL;
+    //while( iter <= nQ ){
+    for( iter = 1UL; iter <= nQ; ++iter){
         temp = 1UL << (nQ-iter);
         
-        i = 0UL;
-        while( i < dim ){
+        //i = 0UL;
+        //while( i < dim ){
+        #pragma omp parallel for //private(j)
+        for( i = 0UL; i < dim; i += 1UL + ( -((i+1UL)/temp & 1UL) & temp) ){
             veci = vec[i];
             vec[i] += vec[i + temp];
             vec[i + temp] = veci - vec[i + temp];
             
-            //test = ((i+1)/temp) & 1; //be careful, uint64_t vs int
-            //i += 1 + ((-test) & temp);
-            i += 1UL + ( -((i+1UL)/temp & 1UL) & temp );
-            //if( (i+1)/temp % 2 == 1 )
-            //    i += temp + 1;
-            //else
-            //    ++i;
+            //i += 1UL + ( -((i+1UL)/temp & 1UL) & temp );
         }
         
-        ++iter;
+        //++iter;
     }
 }
+*/
 
 //from: http://www.dreamincode.net/forums/topic/61496-find-n-max-elements-in-unsorted-array/
 //author: baavgai
-//date: 2014-09-08, 1630
+//date: 2014-09-08, 16:30
 void addLarger( double value, uint64_t indx, uint64_t *list, double *mag_list, uint64_t size ){
     uint64_t i = 0;
     while( i < size-1 && value > mag_list[i+1] ){
@@ -162,8 +187,13 @@ int main( int argc, char **argv ){
     int test, prnt=0;
     uint64_t testi, testj;
     int dzi, dzj;
-    clock_t tend, tbegin = clock();
+    //clock_t tend, tbegin = clock();
+    struct timeval tend, tbegin;
+    double delta;
     
+    //tbegin = clock();
+    gettimeofday( &tbegin, NULL );
+
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                          Parse configuration file
     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -230,18 +260,11 @@ int main( int argc, char **argv ){
     psi  = (double complex *)malloc( (dim)*sizeof(double complex) );
     hz   = (double *)calloc( (dim),sizeof(double) );
     hhxh = (double *)calloc( (dim),sizeof(double) );
-    /*
-    for( i = 0; i < dim; ++i ){
-        printf( "hz[%llu][%llu] = %f\n", i, i, hz[i] );
-    }
-    for( i = 0; i < dim; ++i ){
-        printf( "hhxh[%llu][%llu] = %f\n", i, i, hhxh[i] );
-    }
-    */
 
     /*
         Assemble Hamiltonian and state vector
     */
+    //#pragma omp parallel for private(i, j, bcount, testi, testj, dzi, dzj)
     for( k = 0; k < dim; k++ ){
         bcount = 0;
         for( i = 0; i < nQ; i++ ){
@@ -284,10 +307,6 @@ int main( int argc, char **argv ){
         FWHT( psi, nQ, dim );
         expMatTimesVec( psi, hz, cz, dim ); //apply Z part
         
-        /* 
-            TODO: can probably get some minor speedup by incorporating this 
-                  into expMatTimesVec if needed 
-        */
         scaleVec( psi, 1.0/dim, dim );
     }
 
@@ -322,8 +341,11 @@ int main( int argc, char **argv ){
     free( hz );
     free( hhxh );
 
-    tend = clock();
-    printf( "Total time: %f s\n", (double)(tend - tbegin)/CLOCKS_PER_SEC );
+    //tend = clock();
+    gettimeofday( &tend, NULL );
+    delta = ((tend.tv_sec - tbegin.tv_sec)*1000000u + tend.tv_usec - tbegin.tv_usec)/1.e6;
+    //printf( "Total time: %f s\n", (double)(tend - tbegin)/CLOCKS_PER_SEC );
+    printf( "Total time: %f s\n", delta );
     printf( "Memory used: %ld kB\n", res.resident );
 
     return 0;
