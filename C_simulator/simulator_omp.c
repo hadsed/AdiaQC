@@ -1,14 +1,10 @@
-/*
-    Concepts: Simulation of quantum annealing
-    Processors: 1
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
 #include <complex.h>
 #include "support/parson.h"
+#include <omp.h>
 #include <time.h> //for timing purposes
 
 
@@ -17,90 +13,43 @@ typedef struct {
 } statm_t;
 
 void read_off_memory_status(statm_t* result){
-  unsigned long dummy;
-  const char* statm_path = "/proc/self/statm";
+    unsigned long dummy;
+    const char* statm_path = "/proc/self/statm";
+    FILE *f = fopen(statm_path,"r");  
 
-  FILE *f = fopen(statm_path,"r");
-  
-  if(!f){
-    fprintf(stderr, statm_path);
-    abort();
-  }
-  
-  if(7 != fscanf(f,"%ld %ld %ld %ld %ld %ld %ld",
+    if(!f){
+        fprintf(stderr, statm_path);
+        abort();
+    }  
+
+    if(7 != fscanf(f,"%ld %ld %ld %ld %ld %ld %ld",
                     &result->size,&result->resident,
                     &result->share,&result->text,&result->lib,
                     &result->data,&result->dt)){
-    fprintf(stderr, statm_path);
-    abort();
-  }
-
-  fclose(f);
-}
-
-
-// from: http://stackoverflow.com/questions/111928/is-there-a-printf-converter-to-print-in-binary-format
-// author: EvilTeach, Daniel Lyons
-/*
-const char *byte_to_binary( int x ){
-    static char b[9];
-    b[0] = '\0';
-
-    int z;
-    for( z = 128; z > 0; z >>= 1 ){
-        strcat( b, ( (x & z) == z ) ? "1" : "0" );
+        fprintf(stderr, statm_path);
+        abort();
     }
 
-    return b;
+    fclose(f);
 }
-*/
 
-void scaleVec( double complex *vec, double s, uint64_t N ){
+void expMatTimesVecS( double complex *vec, const double *mat, double complex cc, uint64_t N, double complex scale ){
     uint64_t i;
 
-    for( i = 0; i < N; i++ ){
-        vec[i] *= s;
+    #pragma omp parallel for
+    for( i = 0UL; i < N; i++ ){
+        vec[i] *= scale * cexp( cc*mat[i] );
     }
 }
 
 void expMatTimesVec( double complex *vec, const double *mat, double complex cc, uint64_t N ){
     uint64_t i;
 
-    for( i = 0; i < N; i++ ){
+    #pragma omp parallel for
+    for( i = 0UL; i < N; i++ ){
         vec[i] *= cexp( cc*mat[i] );
     }
 }
-
-/*
-void FWHT( double complex *vec, const uint64_t nQ, const uint64_t dim ){
-    uint64_t i, iter;
-    uint64_t temp;
-    int test;
-    double complex veci;
-    
-    iter = 1UL;
-    while( iter <= nQ ){
-        temp = 1UL << (nQ-iter);
-        
-        i = 0UL;
-        while( i < dim ){
-            veci = vec[i];
-            vec[i] += vec[i + temp];
-            vec[i + temp] = veci - vec[i + temp];
-            
-            //test = ((i+1)/temp) & 1; //be careful, uint64_t vs int
-            //i += 1 + ((-test) & temp);
-            i += 1UL + ( -((i+1UL)/temp & 1UL) & temp );
-            //if( (i+1)/temp % 2 == 1 )
-            //    i += temp + 1;
-            //else
-            //    ++i;
-        }
-        
-        ++iter;
-    }
-}
-*/
 
 void FWHT( double complex *vec, uint64_t nQ, const uint64_t dim ){
     uint64_t stride, base, j;
@@ -108,11 +57,12 @@ void FWHT( double complex *vec, uint64_t nQ, const uint64_t dim ){
     //Cycle through stages with different butterfly strides
     for( stride = dim / 2; stride >= 1; stride >>= 1 ){   
             //Butterfly index within subvector of (2 * stride) size
+            #pragma omp parallel for private(base)
             for( j = 0; j < dim/2; j++ ){   
                 base = j - (j & (stride-1));
 
-                int i0 = base + j +      0;  
-                int i1 = base + j + stride;
+                uint64_t i0 = base + j +      0;  
+                uint64_t i1 = base + j + stride;
 
                 double complex T1 = vec[i0];
                 double complex T2 = vec[i1];
@@ -124,7 +74,7 @@ void FWHT( double complex *vec, uint64_t nQ, const uint64_t dim ){
 
 //from: http://www.dreamincode.net/forums/topic/61496-find-n-max-elements-in-unsorted-array/
 //author: baavgai
-//date: 2014-09-08, 1630
+//date: 2014-09-08, 16:30
 void addLarger( double value, uint64_t indx, uint64_t *list, double *mag_list, uint64_t size ){
     uint64_t i = 0;
     while( i < size-1 && value > mag_list[i+1] ){
@@ -142,7 +92,6 @@ void findLargest( uint64_t *listN, const double complex *list, uint64_t size, ui
     
     double *mag_list = (double *)calloc( N, sizeof(double) );
     for( i = 0; i < N; i++ ){
-        //mag_list[i] = cabs( list[i] );
         addLarger( cabs( list[i] ), i, listN, mag_list, N );
     }
     for( i = N; i < size; i++ ){
@@ -151,7 +100,6 @@ void findLargest( uint64_t *listN, const double complex *list, uint64_t size, ui
             addLarger( temp, i, listN, mag_list, N );
         }
     }
-    //dumpArray(listNth, nLargest);
     free( mag_list );
 }
 
@@ -180,12 +128,17 @@ int main( int argc, char **argv ){
     double complex factor;
     double T = 10.0, dt = 0.1;
     uint64_t i, j, k, bcount;
-    uint64_t nQ=3, N, L=4, dim;
+    uint64_t nQ=3UL, N, L=4UL, dim;
     int test, prnt=0;
     uint64_t testi, testj;
     int dzi, dzj;
-    clock_t tend, tbegin = clock();
+    //clock_t tend, tbegin = clock();
+    struct timeval tend, tbegin;
+    double delta;
     
+    //tbegin = clock();
+    gettimeofday( &tbegin, NULL );
+
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                          Parse configuration file
     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -217,7 +170,8 @@ int main( int argc, char **argv ){
         array = json_object_dotget_array( root_object, "coefficients.alpha" );
         if( array != NULL ){
             for( i = 0; i < json_array_get_count(array); i++ ){
-                al[i] = -json_array_get_number( array, i );
+                //al[i] = -json_array_get_number( array, i );
+                al[i] = json_array_get_number( array, i );
             }
         }
 
@@ -244,7 +198,6 @@ int main( int argc, char **argv ){
 
     /*
         Create state vector and initialize to 1/sqrt(2^n)*(|00...0> + ... + |11...1>)
-        TODO: keep track of local size and local base
     */
     dim = 1 << nQ;
     factor = 1.0/sqrt( dim );
@@ -252,18 +205,11 @@ int main( int argc, char **argv ){
     psi  = (double complex *)malloc( (dim)*sizeof(double complex) );
     hz   = (double *)calloc( (dim),sizeof(double) );
     hhxh = (double *)calloc( (dim),sizeof(double) );
-    /*
-    for( i = 0; i < dim; ++i ){
-        printf( "hz[%llu][%llu] = %f\n", i, i, hz[i] );
-    }
-    for( i = 0; i < dim; ++i ){
-        printf( "hhxh[%llu][%llu] = %f\n", i, i, hhxh[i] );
-    }
-    */
 
     /*
         Assemble Hamiltonian and state vector
     */
+    #pragma omp parallel for private(i, j, bcount, testi, testj, dzi, dzj)
     for( k = 0; k < dim; k++ ){
         bcount = 0;
         for( i = 0; i < nQ; i++ ){
@@ -284,6 +230,7 @@ int main( int argc, char **argv ){
             
         psi[k] = factor;
     }
+    free( al ); free( be ); free( de );
 
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                             Run the Simulation
@@ -297,6 +244,7 @@ int main( int argc, char **argv ){
 
         //Time-dependent coefficients
         cz = (-dt * I)*t/(2.0*T);
+        //cz = (-dt * I)*t/(T);
         cx = (-dt * I)*(1 - t/T);
 
         //Evolve system
@@ -304,38 +252,35 @@ int main( int argc, char **argv ){
         FWHT( psi, nQ, dim );
         expMatTimesVec( psi, hhxh, cx, dim ); //apply X part
         FWHT( psi, nQ, dim );
-        expMatTimesVec( psi, hz, cz, dim ); //apply Z part
+        expMatTimesVecS( psi, hz, cz, dim, 1.0/dim ); //apply Z part
         
-        /* 
-            TODO: can probably get some minor speedup by incorporating this 
-                  into expMatTimesVec if needed 
+        /*
+        FWHT( psi, nQ, dim );
+        expMatTimesVecS( psi, hhxh, cx, dim, factor ); //apply Z part
+        FWHT( psi, nQ, dim );
+        expMatTimesVecS( psi, hz, cz, dim, factor ); //apply Z part
         */
-        scaleVec( psi, 1.0/dim, dim );
     }
 
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                         Check solution and clean up
     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
     /*
-    if( prnt && nQ < 6 ){
-        for( i = 0; i < dim; i++ ){
-            printf( "|psi[%d]| = %f\n", 
-		    i, cabs( psi[i]*psi[i] ) );
-        }
-    } else {
+    for( i = 0; i < dim; i++ ){
+        printf( "|psi[%d]| = %f\n", 
+		i, cabs( psi[i]*psi[i] ) );
+    }
     */
-        uint64_t *largest = (uint64_t *)calloc( L, sizeof(uint64_t) );
-        findLargest( largest, psi, dim, L );
-        for( i = 0; i < L; ++i ){
-            //printf( "psi[%d] = (%f, %f)\t%f\n",
-            printf( "|psi[%d]| = %f\n",
-		    largest[L-1-i],
-		    cabs( psi[largest[L-1-i]]*psi[largest[L-1-i]] ) );
-        }
-        statm_t res;
-        read_off_memory_status( &res );
-        free( largest );
-    //}
+    uint64_t *largest = (uint64_t *)calloc( L, sizeof(uint64_t) );
+    findLargest( largest, psi, dim, L );
+    for( i = 0; i < L; ++i ){
+        printf( "|psi[%d]| = %f\n",
+		largest[L-1-i],
+		cabs( psi[largest[L-1-i]]*psi[largest[L-1-i]] ) );
+    }
+    statm_t res;
+    read_off_memory_status( &res );
+    free( largest );
 
     /*
         Free work space.
@@ -344,8 +289,11 @@ int main( int argc, char **argv ){
     free( hz );
     free( hhxh );
 
-    tend = clock();
-    printf( "Total time: %f s\n", (double)(tend - tbegin)/CLOCKS_PER_SEC );
+    //tend = clock();
+    gettimeofday( &tend, NULL );
+    delta = ((tend.tv_sec - tbegin.tv_sec)*1000000u + tend.tv_usec - tbegin.tv_usec)/1.e6;
+    //printf( "Total time: %f s\n", (double)(tend - tbegin)/CLOCKS_PER_SEC );
+    printf( "Total time: %f s\n", delta );
     printf( "Memory used: %ld kB\n", res.resident );
 
     return 0;

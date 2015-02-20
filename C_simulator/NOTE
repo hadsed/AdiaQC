@@ -1,5 +1,0 @@
-To compile, type the following,
-    gcc -o sim simulator.c parson.c -lfftw3 -lm
-
-You need fftw installed to compile this. The "parson" files
-are for parsing the config files.
