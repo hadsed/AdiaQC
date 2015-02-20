@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <complex.h>
-#include "parson.h"
+#include "support/parson.h"
 #include <time.h> //for timing purposes
 
 
@@ -71,6 +71,7 @@ void expMatTimesVec( double complex *vec, const double *mat, double complex cc, 
     }
 }
 
+/*
 void FWHT( double complex *vec, const uint64_t nQ, const uint64_t dim ){
     uint64_t i, iter;
     uint64_t temp;
@@ -98,6 +99,27 @@ void FWHT( double complex *vec, const uint64_t nQ, const uint64_t dim ){
         
         ++iter;
     }
+}
+*/
+
+void FWHT( double complex *vec, uint64_t nQ, const uint64_t dim ){
+    uint64_t stride, base, j;
+
+    //Cycle through stages with different butterfly strides
+    for( stride = dim / 2; stride >= 1; stride >>= 1 ){   
+            //Butterfly index within subvector of (2 * stride) size
+            for( j = 0; j < dim/2; j++ ){   
+                base = j - (j & (stride-1));
+
+                int i0 = base + j +      0;  
+                int i1 = base + j + stride;
+
+                double complex T1 = vec[i0];
+                double complex T2 = vec[i1];
+                vec[i0] = T1 + T2; 
+                vec[i1] = T1 - T2; 
+            }
+    }   
 }
 
 //from: http://www.dreamincode.net/forums/topic/61496-find-n-max-elements-in-unsorted-array/

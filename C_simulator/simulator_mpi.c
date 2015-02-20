@@ -4,7 +4,7 @@
 #include <math.h>
 #include <complex.h>
 #include <fftw3-mpi.h>
-#include "parson.h"
+#include "support/parson.h"
 #include <time.h> //for timing purposes
 
 
@@ -47,6 +47,7 @@ typedef struct {
     double mag;
 } data_t;
 
+/*
 void scaleVec( fftw_complex *vec, double s, uint64_t N ){
     uint64_t i;
 
@@ -54,8 +55,17 @@ void scaleVec( fftw_complex *vec, double s, uint64_t N ){
         vec[i] *= s;
     }
 }
+*/
 
-void expMatTimesVec( fftw_complex *vec, const double *mat, fftw_complex cc, uint64_t N, fftw_complex scale ){
+void expMatTimesVec( fftw_complex *vec, const double *mat, fftw_complex cc, uint64_t N ){
+    uint64_t i;
+
+    for( i = 0UL; i < N; i++ ){
+        vec[i] *= cexp( cc*mat[i] );
+    }
+}
+
+void expMatTimesVecS( fftw_complex *vec, const double *mat, fftw_complex cc, uint64_t N, fftw_complex scale ){
     uint64_t i;
 
     for( i = 0UL; i < N; i++ ){
@@ -368,13 +378,13 @@ int main( int argc, char **argv ){
         cx = (-sc.dt * I)*(1 - t/sc.T);
 
         //Evolve system
-        expMatTimesVec( psi, hz, cz, ldim, 1.0 ); //apply Z part
+        expMatTimesVec( psi, hz, cz, ldim ); //apply Z part
         //FWHTP( psi, N0, N1, n0, n1, local_N0, local_N1 );
         FWHTP( psi, N0, N1, n0, n1, local_N0, local_N1, planT, planU ); //transpose
-        expMatTimesVec( psi, hhxh, cx, ldim, factor ); //apply X part
+        expMatTimesVec( psi, hhxh, cx, ldim ); //apply X part
         //FWHTP( psi, N0, N1, n0, n1, local_N0, local_N1 );
         FWHTP( psi, N0, N1, n0, n1, local_N0, local_N1, planT, planU ); //transpose
-        expMatTimesVec( psi, hz, cz, ldim, factor ); //apply Z part
+        expMatTimesVecS( psi, hz, cz, ldim, 1.0/dim ); //apply Z part
         
         //scaleVec( psi, 1.0/dim, dim );
     }
