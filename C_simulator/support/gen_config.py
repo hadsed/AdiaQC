@@ -60,7 +60,7 @@ def hopf_config( nq, alpha, beta, delta, p ):
     ising_off = np.triu(memMat*memMat.T, 1)/float(nq)
     for i in xrange( 0, nq ):
         for j in xrange( i+1, nq ):
-            beta.append( ising_off[i,j] );
+            beta.append( -ising_off[i,j] );
     #ising_diag = np.array(inputstate)
 
     return comment

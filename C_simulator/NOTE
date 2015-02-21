@@ -1,0 +1,24 @@
+To compile, type the following,                                                                                                    
+    gcc -o SIM -O2 simulator.c parson.c -lm                                                                                
+
+The "parson" files are for parsing the config files.                                                                                                  
+
+
+
+To compile MPI version, type the following,                                                                                        
+    mpicc -o MPI-SIM -O2 simulator_mpi.c parson.c -lfftw3_mpi -lfftw3 -lm                                                          
+
+To run,                                                                                                                            
+    mpirun -n <# of processes> ./MPI-SIM <config-file>                                                                             
+
+You need fftw installed with mpi to compile this.                                                                                  
+The "parson" files are for parsing the config files.
+
+
+
+To compile OpenMP version, type the following,                                                                                        
+    gcc -fopenmp -o OMP-SIM -O2 simulator_omp.c parson.c -lm
+
+To run,
+    export OMP_NUM_THREADS=8
+    ./OMP-SIM config.json

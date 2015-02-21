@@ -170,8 +170,7 @@ int main( int argc, char **argv ){
         array = json_object_dotget_array( root_object, "coefficients.alpha" );
         if( array != NULL ){
             for( i = 0; i < json_array_get_count(array); i++ ){
-                //al[i] = -json_array_get_number( array, i );
-                al[i] = json_array_get_number( array, i );
+                al[i] = -json_array_get_number( array, i );
             }
         }
 
@@ -274,7 +273,7 @@ int main( int argc, char **argv ){
     uint64_t *largest = (uint64_t *)calloc( L, sizeof(uint64_t) );
     findLargest( largest, psi, dim, L );
     for( i = 0; i < L; ++i ){
-        printf( "|psi[%d]| = %f\n",
+        printf( "|psi[%d]| = %.8f\n",
 		largest[L-1-i],
 		cabs( psi[largest[L-1-i]]*psi[largest[L-1-i]] ) );
     }
